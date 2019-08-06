@@ -1,3 +1,22 @@
-.highlight {
+.highlight,
+.highlighty {
     background-color: #FFA8A8;
+}
+
+mark {
+    background-color: #FFA8A8;
+}
+
+#popup {
+    font-size: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    position:fixed;
+    top: 50px;
+    left: 50px;
+    z-index: 4;
+    background-color: white;
+    min-width: 90px;
+    padding: 20px 10px;
+    box-shadow: 1px 1px 2px 3px rgba(0,0,0,0.06);
+    border-radius: 4px;
 }

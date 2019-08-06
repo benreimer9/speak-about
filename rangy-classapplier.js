@@ -68,6 +68,10 @@
         function addClass(el, className) {
             if (typeof el.classList == "object") {
                 el.classList.add(className);
+                //TODO how do I add the element ID here? 
+                //it's not being brought in... 
+                //maybe I add my own function 'addId' 
+                el.classList.add("test");
             } else {
                 var classNameSupported = (typeof el.className == "string");
                 var elClass = classNameSupported ? el.className : el.getAttribute("class");
@@ -537,6 +541,10 @@
                 elementPropertiesFromOptions = options.elementProperties;
                 elementAttributes = options.elementAttributes;
 
+                console.log('tagNames ', tagNames);
+                console.log('options ', elementPropertiesFromOptions);
+                console.log('att ', elementAttributes);
+
                 for (i = 0; propName = optionProperties[i++]; ) {
                     if (options.hasOwnProperty(propName)) {
                         applier[propName] = options[propName];
@@ -804,7 +812,6 @@
                         this.appliesToElement(parent) &&
                         this.elementHasProperties(parent, this.elementProperties) &&
                         this.elementHasAttributes(parent, this.elementAttributes)) {
-
                         addClass(parent, this.className);
                     } else {
                         var textNodeParent = textNode.parentNode;

@@ -9,6 +9,7 @@
  * Version: 1.3.1-dev
  * Build date: 20 May 2015
  */
+
 (function(factory, root) {
     if (typeof define == "function" && define.amd) {
         // AMD. Register as an anonymous module with a dependency on Rangy.
@@ -21,13 +22,14 @@
         factory(root.rangy);
     }
 })(function(rangy) {
+
     rangy.createModule("Highlighter", ["ClassApplier"], function(api, module) {
         var dom = api.dom;
         var contains = dom.arrayContains;
         var getBody = dom.getBody;
         var createOptions = api.util.createOptions;
         var forEach = api.util.forEach;
-        var nextHighlightId = 1;
+        var nextHighlightId = 1; 
 
         // Puts highlights in order, last in document first.
         function compareHighlights(h1, h2) {
@@ -457,7 +459,6 @@
             highlightSelection: function(className, options) {
                 var converter = this.converter;
                 var classApplier = className ? this.classAppliers[className] : false;
-
                 options = createOptions(options, {
                     containerElementId: null,
                     exclusive: true
