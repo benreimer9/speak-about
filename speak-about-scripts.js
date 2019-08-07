@@ -5,7 +5,7 @@ A plugin for inline blog comments.
 Utilizes the Rangy library for range and selection, MIT License https://github.com/timdown/rangy
  -------------------------- */
 
- 
+
 // TODO Sprint 1
 // Crossing multiple tags with a highlight builds multiple comment components. Bad.
 
@@ -128,7 +128,7 @@ function addCommentComponent(el){
   state.items.push()
   el.insertAdjacentHTML("beforeend", 
     "<form class='h-comment'>" + 
-      "<input type='text' name='comment' placeholder='Comment'>" +
+      "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" +
       "<div class='h-close'>x</div>" +
     "</form>");
   addEventListenersToForm(el);
@@ -163,6 +163,7 @@ function addEventListenersToForm(el) {
 
 function submitComment(el){
   // makeInputReadOnlyOnSubmit(el)
+  console.log('inputField ', el.childNodes[1].childNodes);
   let inputField = el.childNodes[1].childNodes[0];
   inputField.blur();
 }
