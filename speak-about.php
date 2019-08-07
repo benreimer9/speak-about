@@ -27,7 +27,7 @@ function speakabout_enqueue_script() {
 	wp_enqueue_script('rangycore', plugin_dir_url(__FILE__) . 'rangy-core.js');
 	wp_enqueue_script('rangyclass', plugin_dir_url(__FILE__) . 'rangy-classapplier.js');
 	wp_enqueue_script('rangyhighlighter', plugin_dir_url(__FILE__) . 'rangy-highlighter.js');
-	wp_enqueue_script('speakabout', plugin_dir_url(__FILE__) . 'speak-about-scripts.js');
+	wp_enqueue_script('index', plugin_dir_url(__FILE__) . 'index.js');
 	wp_enqueue_style('speakaboutstyle', plugin_dir_url(__FILE__) . 'speak-about-style.css');
 }
 add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
