@@ -1,13 +1,15 @@
 
 /* --------------------------
 Speak About
-A plugin for inline blog comments. 
+A plugin for inline blog comments. https://github.com/benreimer9/speak-about
 Utilizes the Rangy library for range and selection, MIT License https://github.com/timdown/rangy
  -------------------------- */
 
 
 // TODO Sprint 1
-// Crossing multiple tags with a highlight builds multiple comment components. Bad.
+// ! BUG : Crossing multiple tags, or other highlights, with a new highlight is very messy. 
+// ! ^ also sometimes fails to grab the element id... ? 
+// ! build in guards in case the page has other <mark> tags on it
 
 /* Sprint 2  
 Floating Controls. 
@@ -22,7 +24,6 @@ Sprint 3
 - Persistance. Rangy lib had something to keep highlights despite page reload. Look into that for my code? 
 ^ it would notify users past highlights have been submitted on page close. Needs to then differentiate them.. 
 */
-
 
 
 // Setup Rangy
@@ -40,21 +41,14 @@ window.onload = function () {
     elementTagName: "mark",
     elementProperties: {
       href: "#"
-      // onclick: function () {
-      //   var highlight = highlighter.getHighlightForElement(this);
-      //   if (window.confirm("Delete this note (ID " + highlight.id + ")?")) {
-      //     highlighter.removeHighlights([highlight]);
-      //   }
-      //   return false;
-      // }
     }
   }));
 };
 //-------------------------------------------
 
-var state = {
+let state = {
   items : [
-    /* 
+    /* example item
       {
        id:0,
        comment:"",
@@ -65,127 +59,139 @@ var state = {
   ]
 }
 
-document.addEventListener('mouseup', () => {
-  let highlight = document.getSelection();
-  if (isNotJustAClick(highlight)){
-    highlighter.highlightSelection("h-item");
-    newItem();
-  }
-})
+function setupSpeakAbout(){
+  document.addEventListener('mouseup', () => {
+    let highlight = document.getSelection();
+    if (isNotJustAClick(highlight)) {
+      buildNewItem();
+    }
+  })
+}
 
 function isNotJustAClick(highlight) {
   return (highlight.anchorOffset !== highlight.focusOffset);
 }
 
-function newItem(){
-  //grab all items, filter it down to only new ones (they don't have an h-id attribute)
-  let items = [];
-  items = document.querySelectorAll("mark");
-  items = Array.prototype.slice.call(items).filter(x => !x.getAttribute('h-id'));
-  //build the component
-  items.forEach(el => {
-    let id = getHighlightId(el);
-    addHighlightToState(id);
-    addIdToTag(el, id);
-    addCommentComponent(el);
+
+//-------------------------------------------
+// Building a new item, which can be composed of multiple <mark> tags but one itemId to unify them 
+
+function buildNewItem(){
+
+  highlighter.highlightSelection("h-item");
+  let newMarkTags = findNewMarkTags();
+  newMarkTags.forEach(tag => {
+    let itemId = getIdFromTag(tag);
+    addItemToState(itemId);
+    addIdToTag(tag, itemId);
+    addComment(tag, itemId);
   });
 }
 
-function addHighlightToState(id){
-  //check if highlight item is already in state
-  let numOfTagsPerId = [];
-  numOfTagsPerId = state.items.filter(item => { 
-    return item.id === id; 
-  })
-  if (numOfTagsPerId.length === 0){
+function findNewMarkTags(){
+  // new mark tags do not have h-id attributes 
+  let newMarktags = [];
+  allMarkTags = document.querySelectorAll("mark");
+  newMarktags = Array.prototype.slice.call(allMarkTags)
+    .filter(tag => !tag.getAttribute('h-id'));
+  return newMarktags;
+}
+
+function addItemToState(itemId){
+  if (itemIsAlreadyInState(itemId)){
+    state.items.map(item => {
+      if (item.id === itemId) {
+        item.numOfTags++;
+      }
+    })
+  }
+  else {
     state.items.push({
-      id:id,
+      id: itemId,
       comment:"",
       visible:true,
       numOfTags:1
     })
   }
-  else {
-    //already in state, just add to the numOfTags counter
-    state.items.map( item => {
-      if (item.id === id){
-        item.numOfTags++; 
-      } 
-    })
-  }
+}
+function itemIsAlreadyInState(id){
+  let numOfTagsPerId = [];
+  numOfTagsPerId = state.items.filter(item => {
+    return item.id === id;
+  })
+  return numOfTagsPerId.length !== 0 
 }
 
-function addIdToTag(el, id){
-  el.setAttribute("h-id", id);
+function addIdToTag(tag, itemId){
+  tag.setAttribute("h-id", itemId);
 }
 
-function getHighlightId(el) {
-  return highlighter.getHighlightForElement(el).id;
+function getIdFromTag(tag) {
+  return highlighter.getHighlightForElement(tag).id;
 }
 
+//-------------------------------------------
+// Comments
 
-function addCommentComponent(el){
-  state.items.push()
-  el.insertAdjacentHTML("beforeend", 
-    "<form class='h-comment'>" + 
-      "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" +
-      "<div class='h-close'>x</div>" +
-    "</form>");
-  addEventListenersToForm(el);
+const commentHTML =
+  "<form class='h-comment'>" +
+  "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" +
+  "<div class='h-close'>x</div>" +
+  "</form>"
 
-  //remove the browser highlight and keep just the CSS one.
-  document.getSelection().removeAllRanges();
+function addComment(tag, itemId){
+  tag.insertAdjacentHTML("beforeend", commentHTML);
+  addEventListenersToComment(itemId);
+  document.getSelection().removeAllRanges(); //remove the browser highlight and keep just the CSS one for better UX
 }
 
-function addEventListenersToForm(el) {
-
-  let id = getHighlightId(el);
-  let items = document.querySelectorAll(`mark[h-id = "${id}"]`);
-  items.forEach(el => {
-    el.addEventListener("submit", e => {
-      e.preventDefault();
-      submitComment(el);
+function addEventListenersToComment(itemId) {
+  let itemMarkTags = document.querySelectorAll(`mark[h-id = "${itemId}"]`);
+  itemMarkTags.forEach(tag => {
+    tag.addEventListener("submit", event => {
+      event.preventDefault();
+      submitComment(tag);
     })
   });
 
-  let closeButtons = document.querySelectorAll(`mark[h-id = "${id}"] .h-close`);
-  closeButtons.forEach(el => {
-    el.addEventListener("click", e => {
-      state.items.map(item => {
-        if (item.id === id){
-          item.visible = !item.visible;
-          rerenderComponentsVisibility();
-        }
-      })
+  let closeButtons = document.querySelectorAll(`mark[h-id = "${itemId}"] .h-close`);
+  closeButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      toggleCommentVisibility(itemId)
     })
   });
+}
+
+function toggleCommentVisibility(itemId) {
+  state.items.map(item => {
+    if (item.id === itemId) {
+      item.visible = !item.visible;
+      rerenderComponentsVisibility();
+    }
+  })
 }
 
 function submitComment(el){
-  // makeInputReadOnlyOnSubmit(el)
-  console.log('inputField ', el.childNodes[1].childNodes);
+  // ! need a more versatile method here than grabbing childNodes[x], breaks too easily
   let inputField = el.childNodes[1].childNodes[0];
   inputField.blur();
 }
 
-function makeInputReadOnlyOnSubmit(inputField){
-  inputField.setAttribute("readOnly", "")
-}
-
-
 function rerenderComponentsVisibility(){
   state.items.map( item => {
     if (item.visible){
-      let tagList = document.querySelectorAll(`mark[h-id = "${item.id}"] form`);
-      tagList.forEach(tag => {
-        tag.classList.remove("hidden");
+      let itemForms = document.querySelectorAll(`mark[h-id = "${item.id}"] form`);
+      itemForms.forEach(form => {
+        form.classList.remove("hidden");
       });
     }
     else {
-      let tagList = document.querySelectorAll(`mark[h-id = "${item.id}"] form`);
-      tagList.forEach(tag => {
-        tag.classList.add("hidden");
+      let itemForms = document.querySelectorAll(`mark[h-id = "${item.id}"] form`);
+      itemForms.forEach(form => {
+        form.classList.add("hidden");
       });
     }
   })
 }
+
+setupSpeakAbout()
