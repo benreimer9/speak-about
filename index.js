@@ -5,24 +5,22 @@ A plugin for inline blog comments. https://github.com/benreimer9/speak-about
 Utilizes the Rangy library for range and selection, MIT License https://github.com/timdown/rangy
  -------------------------- */
 
-
-// TODO Sprint 1
-// ! BUG : Crossing multiple tags, or other highlights, with a new highlight is very messy. 
-// ! ^ also sometimes fails to grab the element id... ? 
-// ! build in guards in case the page has other <mark> tags on it
-
 /* Sprint 2  
+- Generate report
+- Send report on page close.
+
+Sprint 3
 Floating Controls. 
 - display number of highlights
 - toggle show/hide highlights
 - list highlights
 - go to highlight on list item click 
 
-Sprint 3
-- Generate report
-- Send report on page close.
+Sprint 4
 - Persistance. Rangy lib had something to keep highlights despite page reload. Look into that for my code? 
 ^ it would notify users past highlights have been submitted on page close. Needs to then differentiate them.. 
+- build in guard in case the page has other <mark> tags on it
+- get off jQuery since you're barely using it
 */
 
 
@@ -51,6 +49,8 @@ let state = {
     /* example item
       {
        id:0,
+       highlightText:"",
+       highlightTextContext:"", 
        comment:"",
        visible:false,
        numOfTags:0,
@@ -60,12 +60,17 @@ let state = {
 }
 
 function setupSpeakAbout(){
+  document.write(' <?php add() ?> ');
+  document.write('<button onclick="add()">ADD BUTTON</button>');
   document.addEventListener('mouseup', () => {
     let highlight = document.getSelection();
     if (isNotJustAClick(highlight)) {
       buildNewItem();
     }
-  })
+  });
+  // window.addEventListener('beforeunload', (event) => {
+  //   sendReport();
+  // });
 }
 
 function isNotJustAClick(highlight) {
@@ -75,17 +80,26 @@ function isNotJustAClick(highlight) {
 
 //-------------------------------------------
 // Building a new item, which can be composed of multiple <mark> tags but one itemId to unify them 
+let highlightInfo;
 
 function buildNewItem(){
-
   highlighter.highlightSelection("h-item");
   let newMarkTags = findNewMarkTags();
+  let itemId = null;
   newMarkTags.forEach(tag => {
-    let itemId = getIdFromTag(tag);
-    addItemToState(itemId);
+    if (itemId === null){
+      //on multi-tag highlights the last getIdFromHighlight fails for unknown reasons
+      //this is a simple way of just avoiding that altogether. Only get it the first time, then store.
+      itemId = getIdFromHighlight(tag)
+    } 
+    addItemToState(tag, itemId);
     addIdToTag(tag, itemId);
-    addComment(tag, itemId);
+    addCommentComponent(tag, itemId);
   });
+}
+
+function getHighlightEl(tag){
+  return highlighter.getHighlightForElement(tag);
 }
 
 function findNewMarkTags(){
@@ -97,11 +111,14 @@ function findNewMarkTags(){
   return newMarktags;
 }
 
-function addItemToState(itemId){
+function addItemToState(tag, itemId){
+  
+  //numOfTags
   if (itemIsAlreadyInState(itemId)){
     state.items.map(item => {
       if (item.id === itemId) {
         item.numOfTags++;
+        item.highlightText += tag.innerText;
       }
     })
   }
@@ -110,10 +127,13 @@ function addItemToState(itemId){
       id: itemId,
       comment:"",
       visible:true,
-      numOfTags:1
+      numOfTags:1,
+      highlightText: tag.innerText,
+      highlightTextContext: "temp"
     })
   }
 }
+
 function itemIsAlreadyInState(id){
   let numOfTagsPerId = [];
   numOfTagsPerId = state.items.filter(item => {
@@ -126,7 +146,7 @@ function addIdToTag(tag, itemId){
   tag.setAttribute("h-id", itemId);
 }
 
-function getIdFromTag(tag) {
+function getIdFromHighlight(tag) {
   return highlighter.getHighlightForElement(tag).id;
 }
 
@@ -139,7 +159,7 @@ const commentHTML =
   "<div class='h-close'>x</div>" +
   "</form>"
 
-function addComment(tag, itemId){
+function addCommentComponent(tag, itemId){
   tag.insertAdjacentHTML("beforeend", commentHTML);
   addEventListenersToComment(itemId);
   document.getSelection().removeAllRanges(); //remove the browser highlight and keep just the CSS one for better UX
@@ -150,7 +170,7 @@ function addEventListenersToComment(itemId) {
   itemMarkTags.forEach(tag => {
     tag.addEventListener("submit", event => {
       event.preventDefault();
-      submitComment(tag);
+      submitComment(tag, itemId);
     })
   });
 
@@ -171,10 +191,15 @@ function toggleCommentVisibility(itemId) {
   })
 }
 
-function submitComment(el){
+function submitComment(tag, itemId){
   // ! need a more versatile method here than grabbing childNodes[x], breaks too easily
-  let inputField = el.childNodes[1].childNodes[0];
+  let inputField = tag.childNodes[1].childNodes[0];
   inputField.blur();
+  //take innerText, add to state ID 
+  let comment = document.querySelector(`mark[h-id = "${itemId}"] input`).value;
+  state.items.forEach(item => {
+    if (item.id === itemId)  item.comment = comment; 
+  })
 }
 
 function rerenderComponentsVisibility(){
@@ -193,5 +218,26 @@ function rerenderComponentsVisibility(){
     }
   })
 }
+
+//-------------------------------------------
+// Sending Report 
+function sendReport(){
+  event.preventDefault();
+  event.returnValue = '';
+  let report = "";
+  state.items.forEach(item => {
+    report += 
+      "<div> " +
+      item.highlightText +
+      " </div>" +
+      "<div> " +
+      item.comment + 
+      " </div> " +
+      "<br>"
+  })
+  console.log('report : ', report);
+}
+
+
 
 setupSpeakAbout()
