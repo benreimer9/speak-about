@@ -16,11 +16,8 @@ Author URI: https://www.benreimer.design
 add_action( 'the_content', 'my_thank_you_text' );
 
 function my_thank_you_text ( $content ) {
-    return $content .= '<p>The end!</p>';
-}
-
-function add(){
-  echo '<script type="text/javascript">alert("yo")</script>';
+	$urll = admin_url("admin-ajax.php");
+    return $content .= $urll;
 }
 
 //ENQUEUE MY JS
@@ -30,8 +27,46 @@ function speakabout_enqueue_script() {
 	wp_enqueue_script('rangyhighlighter', plugin_dir_url(__FILE__) . 'rangy-highlighter.js');
 	wp_enqueue_script('index', plugin_dir_url(__FILE__) . 'index.js', array('jquery'));
 	wp_enqueue_style('speakaboutstyle', plugin_dir_url(__FILE__) . 'speak-about-style.css');
+	wp_localize_script( 'index', 'sa_ajax', array( 
+	'ajaxurl' => admin_url( 'admin-ajax.php')
+	));
+	// wp_localize_script('index', 'sa_ajax', array(
+   	// 'pluginsUrl' => plugins_url(),
+	// ));
 }
 add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
+
+
+// Email the report
+// add_action( 'wp_ajax_my_action', 'email_report' );
+// add_action( 'wp_ajax_nopriv_my_action', 'email_report' );
+add_action( 'wp_ajax_siteWideMessage', 'wpse_sendmail' );
+add_action( 'wp_ajax_nopriv_siteWideMessage', 'wpse_sendmail' );
+
+function wpse_sendmail()
+{
+    $for = $_POST['values'];
+    // $email = $_POST['email'];
+    // $headers = 'From: '.$email ."\r\n".'Reply-To: '.$email;
+    // $message = $_POST['message_message'];
+    // $respond = $_POST['message_email'];
+
+    /*if(wp_mail( "support@ontrgt.net", "(OTN) Support: ".$for, $message, $headers))
+    {
+        echo "WOOHOO";
+	}*/
+	$to = "benreimer9@gmail.com";
+	$subject = "Test from SpeakAbout";
+	$message = "holy moly this works";
+	wp_mail( $to, $subject, $message);
+	echo "WPSE SENDS : " . $for;
+    die();
+}
+
+
+
+
+
 
 
 

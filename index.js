@@ -44,6 +44,12 @@ window.onload = function () {
 };
 //-------------------------------------------
 
+
+
+
+
+//-------------------------------------------
+
 let state = {
   items : [
     /* example item
@@ -60,8 +66,6 @@ let state = {
 }
 
 function setupSpeakAbout(){
-  document.write(' <?php add() ?> ');
-  document.write('<button onclick="add()">ADD BUTTON</button>');
   document.addEventListener('mouseup', () => {
     let highlight = document.getSelection();
     if (isNotJustAClick(highlight)) {
@@ -238,6 +242,46 @@ function sendReport(){
   console.log('report : ', report);
 }
 
+
+(function ($) {
+$(document).ready( function(){
+  document.querySelector("#contact").addEventListener("submit", e => {
+     e.preventDefault() 
+    sendMail(e);
+  });
+});
+
+
+function sendMail(e){
+
+  var adminHref = sa_ajax.ajaxurl;
+
+  var forwhat = $("#contact-for").val();
+  var name = $("#contact-name").val();
+  var email = $("#contact-email").val();
+
+  
+  var data = { 'action': 'siteWideMessage', 'values': forwhat };
+
+  $.post(adminHref, data, function (response) {
+    console.log('yooo ', response);
+  });
+  
+
+};
+
+}(jQuery))
+
+
+
+
+// var ajaxurl = 'http://www.reformeducators.org/wp-content/themes/NATE/admin-ajax.php';
+// stringDifference = JSON.stringify(difference);
+// stringDropDifference = JSON.stringify(dropDifference);
+// stringUsername = String(username);
+
+
+// $.post(ajaxurl, { 'Name': stringUsername, 'Changes Made': stringDifference, 'Drop Down Menu Changes': stringDropDifference });
 
 
 setupSpeakAbout()
