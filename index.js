@@ -4,6 +4,8 @@ Speak About
 A plugin for inline blog comments. https://github.com/benreimer9/speak-about
 Utilizes the Rangy library for range and selection, MIT License https://github.com/timdown/rangy
  -------------------------- */
+let s; 
+(function ($) {
 
 /* Sprint 2  
 - Generate report
@@ -67,6 +69,7 @@ let state = {
     */
   ]
 }
+s = state;
 
 function setupSpeakAbout(){
   document.addEventListener('mouseup', () => {
@@ -75,9 +78,9 @@ function setupSpeakAbout(){
       buildNewItem();
     }
   });
-  // window.addEventListener('beforeunload', (event) => {
-  //   sendReport(event);
-  // });
+  window.addEventListener('beforeunload', (event) => {
+    sendReport(event);
+  });
 }
 
 function isNotJustAClick(highlight) {
@@ -230,40 +233,47 @@ function rerenderComponentsVisibility(){
 function sendReport(event){
   event.preventDefault();
   event.returnValue = '';
-  let report = "";
+  let page = window.location.href;
+  let report = 
+    `<p>You have a new message from <a href="${page}"> ${page} </a> 
+    <br>
+    `
   state.items.forEach(item => {
     report += 
-      "<div> " +
-        item.highlightText +
-      " </div>" +
-      "<div> " +
-        item.comment + 
-      " </div> " +
-      "<br>"
+        `
+        <p style="background-color:#FFB5B5;font-size:14px;padding:10px; margin:0px;" >
+          ${item.highlightText}
+        </p>
+        <p style="font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:5px 0px;" >
+          ${item.comment}
+        </p>
+        <br>
+        `
   })
   console.log('report : ', report);
 
   //let's fake data for now
+  sendMail(report)
 
 }
 
+console.log('123');
 
-(function ($) {
 $(document).ready( function(){
-  document.querySelector("#contact").addEventListener("submit", e => {
-     e.preventDefault() 
-    var highlight = "highlight1"
-    var comment = "comment2"
-    var email = "email3"
-    sendMail(highlight, comment, email)
-  });
+  // document.querySelector("#contact").addEventListener("submit", e => {
+  //    e.preventDefault() 
+  //   var highlight = "highlight1"
+  //   var comment = "comment2"
+  //   var email = "email3"
+  //   sendMail(highlight, comment, email)
+  // });
 });
 
 
-function sendMail(highlight, comment, email){
+function sendMail(report){
 
   var adminHref = sa_ajax.ajaxurl;  
-  var mailData = { 'action': 'siteWideMessage', 'highlight':highlight, 'comment': comment, 'email': email };
+  var mailData = { 'action': 'siteWideMessage', 'report':report};
 
   $.post(adminHref, mailData, function (response) {
     console.log('Response: ', response);
@@ -272,7 +282,6 @@ function sendMail(highlight, comment, email){
 
 };
 
-}(jQuery))
 
 
 
@@ -287,3 +296,6 @@ function sendMail(highlight, comment, email){
 
 
 setupSpeakAbout()
+
+
+}(jQuery))

@@ -45,9 +45,9 @@ add_action( 'wp_ajax_nopriv_siteWideMessage', 'wpse_sendmail' );
 
 function wpse_sendmail()
 {
-	$comment = $_POST['comment'];
-	$highlight = $_POST['highlight'];
-	$email = $_POST['email'];
+	$report = $_POST['report'];
+	// $highlight = $_POST['highlight'];
+	// $email = $_POST['email'];
     // $email = $_POST['email'];
     // $headers = 'From: '.$email ."\r\n".'Reply-To: '.$email;
     // $message = $_POST['message_message'];
@@ -57,13 +57,12 @@ function wpse_sendmail()
     {
         echo "WOOHOO";
 	}*/
+	
 	$to = "benreimer9@gmail.com";
 	$subject = "Test from SpeakAbout";
-	$message = "holy moly this works";
-	wp_mail( $to, $subject, $message);
-	echo "Comment : " . $comment;
-	echo "Highlight : " . $highlight;
-	echo "Email : " . $email;
+	$message = stripslashes($report);
+	$headers = array('Content-Type: text/html; charset=UTF-8');
+	wp_mail( $to, $subject, $message, $headers);
     die();
 }
 
