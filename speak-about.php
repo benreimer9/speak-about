@@ -13,12 +13,12 @@ Author URI: https://www.benreimer.design
 */
 
 //THE EXAMPLE
-add_action( 'the_content', 'my_thank_you_text' );
+// add_action( 'the_content', 'my_thank_you_text' );
 
-function my_thank_you_text ( $content ) {
-	$urll = admin_url("admin-ajax.php");
-    return $content .= $urll;
-}
+// function my_thank_you_text ( $content ) {
+// 	$urll = admin_url("admin-ajax.php");
+//     return $content .= $urll;
+// }
 
 //ENQUEUE MY JS
 function speakabout_enqueue_script() { 
@@ -45,7 +45,9 @@ add_action( 'wp_ajax_nopriv_siteWideMessage', 'wpse_sendmail' );
 
 function wpse_sendmail()
 {
-    $for = $_POST['values'];
+	$comment = $_POST['comment'];
+	$highlight = $_POST['highlight'];
+	$email = $_POST['email'];
     // $email = $_POST['email'];
     // $headers = 'From: '.$email ."\r\n".'Reply-To: '.$email;
     // $message = $_POST['message_message'];
@@ -59,7 +61,9 @@ function wpse_sendmail()
 	$subject = "Test from SpeakAbout";
 	$message = "holy moly this works";
 	wp_mail( $to, $subject, $message);
-	echo "WPSE SENDS : " . $for;
+	echo "Comment : " . $comment;
+	echo "Highlight : " . $highlight;
+	echo "Email : " . $email;
     die();
 }
 

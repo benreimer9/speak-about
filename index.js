@@ -15,6 +15,9 @@ Floating Controls.
 - toggle show/hide highlights
 - list highlights
 - go to highlight on list item click 
+Intro paragraph 
+- content
+- figure out how it should be placed into page content
 
 Sprint 4
 - Persistance. Rangy lib had something to keep highlights despite page reload. Look into that for my code? 
@@ -73,7 +76,7 @@ function setupSpeakAbout(){
     }
   });
   // window.addEventListener('beforeunload', (event) => {
-  //   sendReport();
+  //   sendReport(event);
   // });
 }
 
@@ -93,7 +96,7 @@ function buildNewItem(){
   newMarkTags.forEach(tag => {
     if (itemId === null){
       //on multi-tag highlights the last getIdFromHighlight fails for unknown reasons
-      //this is a simple way of just avoiding that altogether. Only get it the first time, then store.
+      //this if statement is a simple way of just avoiding that altogether. Only get it the first time, then store.
       itemId = getIdFromHighlight(tag)
     } 
     addItemToState(tag, itemId);
@@ -109,15 +112,14 @@ function getHighlightEl(tag){
 function findNewMarkTags(){
   // new mark tags do not have h-id attributes 
   let newMarktags = [];
-  allMarkTags = document.querySelectorAll("mark");
-  newMarktags = Array.prototype.slice.call(allMarkTags)
+  let allMarkTags = document.querySelectorAll("mark");
+  newMarktags = Array.prototype.slice
+    .call(allMarkTags)
     .filter(tag => !tag.getAttribute('h-id'));
   return newMarktags;
 }
 
 function addItemToState(tag, itemId){
-  
-  //numOfTags
   if (itemIsAlreadyInState(itemId)){
     state.items.map(item => {
       if (item.id === itemId) {
@@ -159,8 +161,8 @@ function getIdFromHighlight(tag) {
 
 const commentHTML =
   "<form class='h-comment'>" +
-  "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" +
-  "<div class='h-close'>x</div>" +
+    "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" +
+    "<div class='h-close'>x</div>" +
   "</form>"
 
 function addCommentComponent(tag, itemId){
@@ -196,7 +198,7 @@ function toggleCommentVisibility(itemId) {
 }
 
 function submitComment(tag, itemId){
-  // ! need a more versatile method here than grabbing childNodes[x], breaks too easily
+  // ! need a more versatile method here than grabbing childNodes[x], breaks too easily on html changes
   let inputField = tag.childNodes[1].childNodes[0];
   inputField.blur();
   //take innerText, add to state ID 
@@ -225,21 +227,24 @@ function rerenderComponentsVisibility(){
 
 //-------------------------------------------
 // Sending Report 
-function sendReport(){
+function sendReport(event){
   event.preventDefault();
   event.returnValue = '';
   let report = "";
   state.items.forEach(item => {
     report += 
       "<div> " +
-      item.highlightText +
+        item.highlightText +
       " </div>" +
       "<div> " +
-      item.comment + 
+        item.comment + 
       " </div> " +
       "<br>"
   })
   console.log('report : ', report);
+
+  //let's fake data for now
+
 }
 
 
@@ -247,24 +252,21 @@ function sendReport(){
 $(document).ready( function(){
   document.querySelector("#contact").addEventListener("submit", e => {
      e.preventDefault() 
-    sendMail(e);
+    var highlight = "highlight1"
+    var comment = "comment2"
+    var email = "email3"
+    sendMail(highlight, comment, email)
   });
 });
 
 
-function sendMail(e){
+function sendMail(highlight, comment, email){
 
-  var adminHref = sa_ajax.ajaxurl;
+  var adminHref = sa_ajax.ajaxurl;  
+  var mailData = { 'action': 'siteWideMessage', 'highlight':highlight, 'comment': comment, 'email': email };
 
-  var forwhat = $("#contact-for").val();
-  var name = $("#contact-name").val();
-  var email = $("#contact-email").val();
-
-  
-  var data = { 'action': 'siteWideMessage', 'values': forwhat };
-
-  $.post(adminHref, data, function (response) {
-    console.log('yooo ', response);
+  $.post(adminHref, mailData, function (response) {
+    console.log('Response: ', response);
   });
   
 
