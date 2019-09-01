@@ -187,6 +187,8 @@
 
                     converter = {
                         rangeToCharacterRange: function (range, containerNode) {
+                            console.log('range : ', range);
+                            console.log('containerNode : ', containerNode);
                             return CharacterRange.fromCharacterRange(range.toCharacterRange(containerNode));
                         },
 
@@ -243,7 +245,6 @@
             getText: function () {
                 return this.getRange().toString();
             },
-
             containsElement: function (el) {
                 return this.getRange().containsNodeContents(el.firstChild);
             },
@@ -261,7 +262,6 @@
             getHighlightElements: function () {
                 return this.classApplier.getElementsWithClassIntersectingRange(this.getRange());
             },
-
             toString: function () {
                 return "[Highlight(ID: " + this.id + ", class: " + this.classApplier.className + ", character range: " +
                     this.characterRange.start + " - " + this.characterRange.end + ")]";
@@ -322,8 +322,13 @@
 
                 return intersectingHighlights;
             },
-
+            highlightTextTest : function (){
+                return "test"
+            },
             highlightCharacterRanges: function (className, charRanges, options) {
+                // console.log('classNane : ', className);
+                // console.log('charRange : ', charRanges);
+                // console.log('options : ', options);
                 var i, len, j;
                 var highlights = this.highlights;
                 var converter = this.converter;

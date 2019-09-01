@@ -5,11 +5,11 @@
 ::selection {
     background-color: #FFA8A8 !important;
 }
-.h-item {
+.h_item {
     background-color: #FFA8A8;
     position:relative;
 }
-.h-comment {
+.h_comment {
     position: absolute;
     right:0;
     top:-45px;
@@ -19,10 +19,10 @@
     padding: 0px;
     z-index: 2px;
 }
-.h-comment input[type="text"] {
+.h_comment input[type="text"] {
     border:none;
 }
-.h-close {
+.h_close {
     cursor: pointer;
     position: absolute;
     top:0px;
