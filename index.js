@@ -6,24 +6,22 @@ Utilizes the Rangy library for range and selection, MIT License https://github.c
 https://github.com/timdown/rangy/wiki/
 
  -------------------------- */
-let s,t,y,u;
 (function ($) {
 
-/* Sprint 2  
-- Generate report
-- Send report on page close.
+/* 
+UX, Submit comment inputs that haven't been submitted
+- users may not hit enter on their comments. They should still be submitted regardless. (update every second? or on click away?)
 
-Sprint 3
 Floating Controls. 
 - display number of highlights
 - toggle show/hide highlights
 - list highlights
 - go to highlight on list item click 
+
 Intro paragraph 
 - content
 - figure out how it should be placed into page content
 
-Sprint 4
 - Persistance. Rangy lib had something to keep highlights despite page reload. Look into that for my code? 
 ^ it would notify users past highlights have been submitted on page close. Needs to then differentiate them.. 
 - build in guard in case the page has other <mark> tags on it
@@ -130,7 +128,7 @@ function addItemToState(tag, itemId){
       if (item.id === itemId) {
         item.numOfTags++;
         item.highlightText += tag.innerText;
-        item.highlightTextContext = getHighlightTextContext(itemId)
+        item.highlightTextContext = getHighlightTextContext(tag, itemId)
       }
     })
   }
@@ -146,10 +144,11 @@ function addItemToState(tag, itemId){
   }
 }
 
-function getHighlightTextContext(itemId){
+function getHighlightTextContext(tag, itemId){
  
   // TODO seperate email formatting from just getting highlight context 
-
+  let elem = getHighlightEl(tag);
+  let getRange = elem.getRange()
   let parentElement = getRange.commonAncestorContainer.innerHTML;
   let shadowElement = `<div id="SA_SHADOW" style="display:none"></div>`;
   document.querySelector("body").insertAdjacentHTML("beforeend", shadowElement);
@@ -167,7 +166,7 @@ function getHighlightTextContext(itemId){
 
   let plainTextShadow = document.querySelector("#SA_SHADOW").innerText;
   let startHighlightPos = plainTextShadow.indexOf(`<span class="SA_HIGHLIGHT"`);
-  let numOfExtraCharactersForContext = 200; 
+  let numOfExtraCharactersForContext = 150; 
   let startingDots = "...";
   let endingDots = "...";
 

@@ -187,8 +187,6 @@
 
                     converter = {
                         rangeToCharacterRange: function (range, containerNode) {
-                            console.log('range : ', range);
-                            console.log('containerNode : ', containerNode);
                             return CharacterRange.fromCharacterRange(range.toCharacterRange(containerNode));
                         },
 
@@ -326,9 +324,6 @@
                 return "test"
             },
             highlightCharacterRanges: function (className, charRanges, options) {
-                // console.log('classNane : ', className);
-                // console.log('charRange : ', charRanges);
-                // console.log('options : ', options);
                 var i, len, j;
                 var highlights = this.highlights;
                 var converter = this.converter;

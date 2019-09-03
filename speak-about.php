@@ -48,19 +48,10 @@ function wpse_sendmail()
 	$report = $_POST['report'];
 	$title = $_POST['title'];
 	$title_url = $_POST['title_url'];
-	// $highlight = $_POST['highlight'];
-	// $email = $_POST['email'];
-    // $email = $_POST['email'];
-    // $headers = 'From: '.$email ."\r\n".'Reply-To: '.$email;
-    // $message = $_POST['message_message'];
-    // $respond = $_POST['message_email'];
 
-    /*if(wp_mail( "support@ontrgt.net", "(OTN) Support: ".$for, $message, $headers))
-    {
-        echo "WOOHOO";
-	}*/
-	echo "title : " . $title; 
-
+	$options = get_option( 'speakAbout_settings' );
+	$reportEmail = $options['speakAbout_report_email'];
+	$reportTitle = $options['speakAbout_report_title'];
 	
 	$emailHead = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:v="urn:schemas-microsoft-com:vml"><head><!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]--><meta content="text/html; charset=utf-8" http-equiv="Content-Type"/><meta content="width=device-width" name="viewport"/><!--[if !mso]><!--><meta content="IE=edge" http-equiv="X-UA-Compatible"/><!--<![endif]--><title></title><!--[if !mso]><!--><!--<![endif]--><style type="text/css">body {margin: 0;padding: 0;}table,td,tr {vertical-align: top;border-collapse: collapse;}* {line-height: inherit;}a[x-apple-data-detectors=true] {color: inherit !important;text-decoration: none !important;}</style><style id="media-query" type="text/css">@media (max-width: 520px) {.block-grid,.col {min-width: 320px !important;max-width: 100% !important;display: block !important;}.block-grid {width: 100% !important;}.col {width: 100% !important;}.col>div {margin: 0 auto;}img.fullwidth,img.fullwidthOnMobile {max-width: 100% !important;}.no-stack .col {min-width: 0 !important;display: table-cell !important;}.no-stack.two-up .col {width: 50% !important;}.no-stack .col.num4 {width: 33% !important;}.no-stack .col.num8 {width: 66% !important;}.no-stack .col.num4 {width: 33% !important;}.no-stack .col.num3 {width: 25% !important;}.no-stack .col.num6 {width: 50% !important;}.no-stack .col.num9 {width: 75% !important;}.video-block {max-width: none !important;}.mobile_hide {min-height: 0px;max-height: 0px;max-width: 0px;display: none;overflow: hidden;font-size: 0px;}.desktop_hide {display: block !important;max-height: none !important;}}</style></head><body class="clean-body" style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; background-color: #FFFFFF;"><!--[if IE]><div class="ie-browser"><![endif]--><table bgcolor="#FFFFFF" cellpadding="0" cellspacing="0" class="nl-container" role="presentation" style="table-layout: fixed; vertical-align: top; min-width: 320px; Margin: 0 auto; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #FFFFFF; width: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td style="word-break: break-word; vertical-align: top;" valign="top"><!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="background-color:#FFFFFF"><![endif]--><div style="background-color:transparent;"><div class="block-grid" style="Margin: 0 auto; min-width: 320px; max-width: 500px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: transparent;"><div style="border-collapse: collapse;display: table;width: 100%;background-color:transparent;"><!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:transparent;"><tr><td align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:500px"><tr class="layout-full-width" style="background-color:transparent"><![endif]--><!--[if (mso)|(IE)]><td align="center" width="500" style="background-color:transparent;width:500px; border-top: 0px solid transparent; border-left: 0px solid transparent; border-bottom: 0px solid transparent; border-right: 0px solid transparent;" valign="top"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 0px; padding-left: 0px; padding-top:5px; padding-bottom:5px;"><![endif]--><div class="col num12" style="min-width: 320px; max-width: 500px; display: table-cell; vertical-align: top; width: 500px;"><div style="width:100% !important;"><!--[if (!mso)&(!IE)]><!--><div style="border-top:0px solid transparent; border-left:0px solid transparent; border-bottom:0px solid transparent; border-right:0px solid transparent; padding-top:5px; padding-bottom:5px; padding-right: 0px; padding-left: 0px;"><!--<![endif]--><!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]--><div style="color:#555555;font-family:Arial, Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:10px;padding-left:10px;"><div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
 	<p style="font-size: 14px; line-height: 24px; margin: 0;"><span style="font-size: 22px;">
@@ -71,8 +62,13 @@ function wpse_sendmail()
 	$message = $emailHead . $message . $emailBase; 
 
 
-	$to = "benreimer9@gmail.com";
-	$subject = "Test from SpeakAbout";
+	$to = $reportEmail;
+
+	if (empty($reportTitle)){
+		$subject = "Message from SpeakAbout";
+	} else {
+		$subject = $reportTitle;
+	}
 	
 	$headers = array('Content-Type: text/html; charset=UTF-8');
 	wp_mail( $to, $subject, $message, $headers);
@@ -88,20 +84,70 @@ function wpse_sendmail()
 
 
 /** Options Admin */
-add_action( 'admin_menu', 'speak_about_menu' );
+add_action( 'admin_menu', 'speakabout_add_admin_menu' );
+add_action( 'admin_init', 'speakabout_settings_init' );
 
-function speak_about_menu() {
-	add_options_page( 'SpeakAbout Options', 'SpeakAbout', 'manage_options', 'my-unique-identifier', 'speak_about_options' );
+
+function speakabout_add_admin_menu() {
+	add_options_page( 'SpeakAbout Options', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page' );
 }
 
-function speak_about_options() {
+
+function speakabout_settings_init(  ) {
+	register_setting( 'saPlugin', 'speakAbout_settings' );
+    add_settings_section(
+        'saPlugin_section',
+        __( 'Email', 'wordpress' ),
+        'stp_api_settings_section_callback',
+        'saPlugin'
+	);
+	add_settings_field(
+        'speakAbout_report_title',
+        __( 'Email Subject Line:', 'wordpress' ),
+        'speakAbout_report_title_render',
+        'saPlugin',
+        'saPlugin_section'
+    );
+    add_settings_field(
+        'speakAbout_report_email',
+        __( 'Email Address:', 'wordpress' ),
+        'speakAbout_report_email_render',
+        'saPlugin',
+        'saPlugin_section'
+    );
+}
+function speakAbout_report_title_render(  ) {
+    $options = get_option( 'speakAbout_settings' );
+    ?>
+    <input type='text' placeholder="New message from SpeakAbout!" style="width: 250px" name='speakAbout_settings[speakAbout_report_title]' value='<?php echo $options['speakAbout_report_title']; ?>'>
+    <?php
+}
+function speakAbout_report_email_render(  ) {
+    $options = get_option( 'speakAbout_settings' );
+    ?>
+    <input type='text' style="width: 250px" name='speakAbout_settings[speakAbout_report_email]' value='<?php echo $options['speakAbout_report_email']; ?>'>
+    <?php
+}
+
+function stp_api_settings_section_callback(  ) {
+    echo __( 'Change your email settings', 'wordpress' );
+}
+
+function speakabout_options_page() {
 	if ( !current_user_can( 'manage_options' ) )  {
 		wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
 	}
-    echo '<div class="wrap">';
-    echo '<h1>SpeakAbout Settings.</h1>';
-	echo '<p>Here is where the form would go if I actually had options.</p>';
-	echo '</div>';
+	?>
+    <form action='options.php' method='post'>
+
+        <h1>SpeakAbout Settings</h1>
+		<br>
+        <?php
+        settings_fields( 'saPlugin' );
+        do_settings_sections( 'saPlugin' );
+        submit_button();
+        ?>
+
+    </form>
+    <?php
 }
- 
-?>
