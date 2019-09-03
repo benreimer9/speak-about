@@ -130,7 +130,7 @@ function addItemToState(tag, itemId){
       if (item.id === itemId) {
         item.numOfTags++;
         item.highlightText += tag.innerText;
-        item.highlightTextContext = getHighlightTextContext(tag, itemId)
+        item.highlightTextContext = getHighlightTextContext(itemId)
       }
     })
   }
@@ -146,94 +146,49 @@ function addItemToState(tag, itemId){
   }
 }
 
-function getHighlightTextContext(tag, itemId){
-  // alert(rangy.getSelection());
-
-  let context = "";
-
-  let elem = getHighlightEl(tag);
-  let fullText = elem.getRange().nativeRange.commonAncestorContainer.innerText;
-  let rangeStart = elem.characterRange.start;
-  // let document = elem.getDocument();
-  t = elem.doc.activeElement.innerText;
-  y = t.indexOf("living");
-
-  //console.log('el : ', elem);
-  // console.log('range : ', elem.characterRange);
-
-
-//I can do it off of getRange(). 
-// a combo of startOffset, the commonAncestorContainer and my own numbers should help me get it
-  let getRange = elem.getRange()
-  let parentText = getRange.commonAncestorContainer.innerText; //the parent that contains the bigger chunk of text
-  let highlightText = getRange.endContainer.data; //the string of the highlighted text
-  let startOffset = getRange.startOffset; //the offset of the highlight from the beginning of the element
-  let start = getRange.startContainer.data; //all the preceding text before highlight in that element 
-  // console.log('get range : ', getRange);
-  // console.log('parentText : ', parentText);
-  // console.log('highlightText : ', highlightText);
-  // console.log('start : ', start);
-  // console.log('startOffset : ', startOffset);
-
-  //Hacky Solution for now
-  //identify the highlights position by grabbing the full text, finding the start item, counting the offset, and getting the highlight from there
-  //could potentially fail in situations with identical repeating text.
-
-  //position would be startIndex + startOffset ? 
-  let startIndex = parentText.indexOf(start) //how far off of parentText our start text begins
-  let beginningOffset = startIndex + startOffset;
-  // console.log('startIndex : ', startIndex);
-  // console.log('distance should be : ', startIndex + startOffset);
-  // console.log('beginningOffset : ', beginningOffset);
-  let highLightTextLength = highlightText.length;
-  let startOfPostHighlight = beginningOffset + highLightTextLength;
-
-
-
-  let preHighlightText = parentText.slice(0, beginningOffset)
-  let postHighlightText = parentText.slice(startOfPostHighlight)
-  // console.log('--------OUTPUT ------------');
-  // console.log(preHighlightText);
-  // console.log(highlightText);
-  // console.log(postHighlightText);
-
-  // IDEA TWO
-  //grab the html not the text.
-  //just paste that in the email
-  //or, find the h_item within it, and slice anything more than 50 chars before or after. 
-  //note : can't do DOM changes as norm because nothing I do here should actually affect the legit page 
+function getHighlightTextContext(itemId){
  
+  // TODO seperate email formatting from just getting highlight context 
 
-
-  // Idea Three
-  // grab 1) ancestor html 2) highlight id 
-  // remove comment
-  // insert a unique string around the highlight
-  // grab ancestor text and put it into a p tag
-  // grab the highlight (using the unique string) and highlight that, remove string
-  // voila 
-  let ancestor = getRange.commonAncestorContainer.innerHTML;
-
-  //I'll make a new div where I can do my manipulation in peace. 
-  //first remove all comments.
+  let parentElement = getRange.commonAncestorContainer.innerHTML;
   let shadowElement = `<div id="SA_SHADOW" style="display:none"></div>`;
   document.querySelector("body").insertAdjacentHTML("beforeend", shadowElement);
-  document.querySelector('#SA_SHADOW').innerHTML = ancestor;
+  document.querySelector('#SA_SHADOW').innerHTML = parentElement;
+  //remove comments from the shadow version
   let shadowComments = document.querySelectorAll(`#SA_SHADOW .h_comment`);
   shadowComments.forEach(el => {
     el.remove();
   });
-  let h_item = document.querySelector(`#SA_SHADOW mark[h_id="${itemId}"]`);
-  let inner = h_item.innerText;
-  inner = `<span style="color:red"> ${inner} </span>`;
-  h_item.innerText = inner; 
+  //reform the highlight with a span and inline CSS so the highlight appears in the email
+  let highlightItem = document.querySelector(`#SA_SHADOW mark[h_id="${itemId}"]`);
+  let inner = highlightItem.innerText;
+  let newInner = `<span class="SA_HIGHLIGHT" style="line-height: 12px; font-size: 16px; margin: 0; padding:3px; background-color:#ffc2c2">${inner}</span>`;
+  highlightItem.innerText = newInner;
 
   let plainTextShadow = document.querySelector("#SA_SHADOW").innerText;
-  let reportHTML = `<p> ${plainTextShadow} </p>`;
-  console.log(document.querySelector('#SA_SHADOW'));
-  console.log(reportHTML);
-  
-  // t = highlighter.highlightCharacterRanges("h_item", [{end:300, start:150}], {containerElementId: null, exclusive: true})
+  let startHighlightPos = plainTextShadow.indexOf(`<span class="SA_HIGHLIGHT"`);
+  let numOfExtraCharactersForContext = 200; 
+  let startingDots = "...";
+  let endingDots = "...";
+
+  let sliceStartPoint = startHighlightPos - numOfExtraCharactersForContext; 
+  if (sliceStartPoint <= 0){
+    sliceStartPoint = 0;
+    startingDots = "";
+  } 
+
+  let sliceEndPoint = startHighlightPos + newInner.length + numOfExtraCharactersForContext; 
+  if (sliceEndPoint > plainTextShadow.length){
+    sliceEndPoint = plainTextShadow.length;
+    endingDots = "";
+  } 
+
+  let shortenedPlainTextShadow = plainTextShadow.slice(sliceStartPoint, sliceEndPoint);
+  let reportHTML = `<p>${startingDots}${shortenedPlainTextShadow}${endingDots}</p>`;
+
+  // TODO further sanitizing for code 
+  // hypothetically an author could write code in their text that stays as text until
+  // I send it out in the email, then gets converted to html / css / js. 
   return reportHTML;
 }
 
@@ -336,25 +291,21 @@ function sendReport(event){
   state.items.forEach(item => {
     report += `
   <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
-<div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:10px;padding-left:10px;">
-	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
-		<p style="font-size: 14px; line-height: 19px; margin: 0; padding:10px;background-color:#FFB5B5">
-			<span style="font-size: 16px;">${item.highlightTextContext}</span>
-		</p>
-	</div>
+<div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
+	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
+			${item.highlightTextContext}</div>
 </div>
 <!--[if mso]></td></tr></table><![endif]-->
-<!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
-<div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:10px;padding-left:10px;">
+<!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 0px; padding-bottom: 0px; font-family: Arial, sans-serif"><![endif]-->
+<div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:0px;padding-right:10px;padding-bottom:20px;padding-left:10px;">
 	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
-		<p style="font-size: 14px; line-height: 19px; margin: 0;font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:5px 0px;">
-			<span style="font-size: 16px;">${item.comment}</span>
+		<p style="font-size: 14px; line-height: 24px; margin: 0;font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:2px 0px;">
+			<span style="font-size: 18px;">${item.comment}</span>
 		</p>
 	</div>
 </div>
 `
 
-    // report += `<span style="font-size: 16px;">${item.highlightText}</span>`
   })
 
   // console.log('report : ', report);
@@ -393,14 +344,21 @@ function sendMail(report){
 
 
 
-// var ajaxurl = 'http://www.reformeducators.org/wp-content/themes/NATE/admin-ajax.php';
-// stringDifference = JSON.stringify(difference);
-// stringDropDifference = JSON.stringify(dropDifference);
-// stringUsername = String(username);
-
-
-// $.post(ajaxurl, { 'Name': stringUsername, 'Changes Made': stringDifference, 'Drop Down Menu Changes': stringDropDifference });
-
+//Rangy Code worth remembering
+/* alert(rangy.getSelection());                               -- gets the highlight selection 
+let elem = getHighlightEl(tag);                               --- get the element highlight
+let fText = elem.getRange().nativeRange.commonAncestorContainer.innerText;  -- gets the parent container text
+let rangeStart = elem.characterRange.start;                   -- character ranges
+let getRange = elem.getRange()                                -- element range
+let parentText = getRange.commonAncestorContainer.innerText;  --- the parent that contains the bigger chunk of text
+let highlightText = getRange.endContainer.data;               --- the string of the highlighted text
+let startOffset = getRange.startOffset;                       --- the offset of the highlight from the beginning of the element
+let start = getRange.startContainer.data;                     --- all the preceding text before highlight in that element 
+let startIndex = parentText.indexOf(start)                    --- how far off of parentText our start text begins
+let beginningOffset = startIndex + startOffset;
+let preHighlightText = parentText.slice(0, beginningOffset)
+let postHighlightText = parentText.slice(startOfPostHighlight)
+*/
 
 setupSpeakAbout()
 
