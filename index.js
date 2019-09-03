@@ -6,11 +6,15 @@ Utilizes the Rangy library for range and selection, MIT License https://github.c
 https://github.com/timdown/rangy/wiki/
 
  -------------------------- */
+ let s; 
 (function ($) {
 
 /* 
+
 UX, Submit comment inputs that haven't been submitted
 - users may not hit enter on their comments. They should still be submitted regardless. (update every second? or on click away?)
+
+- highlight deletion
 
 Floating Controls. 
 - display number of highlights
@@ -90,10 +94,8 @@ function isNotJustAClick(highlight) {
 
 //-------------------------------------------
 // Building a new item, which can be composed of multiple <mark> tags but one itemId to unify them 
-let highlightInfo;
-
 function buildNewItem(){
-  highlighter.highlightSelection("h_item");
+  highlighter.highlightSelection("h_item", { exclusive: false });
   let newMarkTags = findNewMarkTags();
   let itemId = null;
   newMarkTags.forEach(tag => {
@@ -106,6 +108,7 @@ function buildNewItem(){
     addCommentComponent(tag, itemId);
     addItemToState(tag, itemId);
   });
+  removeExtraCommentComponents(itemId);
 }
 
 function getHighlightEl(tag){
@@ -144,51 +147,67 @@ function addItemToState(tag, itemId){
   }
 }
 
-function getHighlightTextContext(tag, itemId){
- 
-  // TODO seperate email formatting from just getting highlight context 
+// function getHighlightTextContext(tag, itemId) {
+
+//   //I have the parent Element
+//   //I need to have this update 
+//   //let parentElement = getHighlightEl(tag).getRange().commonAncestorContainer.innerHTML;
+
+// }
+function getHighlightTextContext(tag, itemId) {
+
+  
   let elem = getHighlightEl(tag);
   let getRange = elem.getRange()
   let parentElement = getRange.commonAncestorContainer.innerHTML;
   let shadowElement = `<div id="SA_SHADOW" style="display:none"></div>`;
   document.querySelector("body").insertAdjacentHTML("beforeend", shadowElement);
   document.querySelector('#SA_SHADOW').innerHTML = parentElement;
+
+  
   //remove comments from the shadow version
   let shadowComments = document.querySelectorAll(`#SA_SHADOW .h_comment`);
   shadowComments.forEach(el => {
     el.remove();
   });
+
   //reform the highlight with a span and inline CSS so the highlight appears in the email
-  let highlightItem = document.querySelector(`#SA_SHADOW mark[h_id="${itemId}"]`);
-  let inner = highlightItem.innerText;
-  let newInner = `<span class="SA_HIGHLIGHT" style="line-height: 12px; font-size: 16px; margin: 0; padding:3px; background-color:#ffc2c2">${inner}</span>`;
-  highlightItem.innerText = newInner;
+  let highlightItemsList = document.querySelectorAll(`#SA_SHADOW mark[h_id="${itemId}"]`);
+  let startHighlightStyling = `<span class="SA_HIGHLIGHT" style="line-height: 12px; font-size: 16px; margin: 0; padding:3px; background-color:#ffc2c2">`
+  let endHighlightStyling = `</span>`;
+  let lastHighlightTextLength; //this will be needed later
+  highlightItemsList.forEach(item => {
+    item.innerText = startHighlightStyling + item.innerText + endHighlightStyling;
+    lastHighlightTextLength = item.innerText.length; 
+  })
 
   let plainTextShadow = document.querySelector("#SA_SHADOW").innerText;
-  let startHighlightPos = plainTextShadow.indexOf(`<span class="SA_HIGHLIGHT"`);
+  let firstHighlightPos = plainTextShadow.indexOf(`<span class="SA_HIGHLIGHT"`); //finds first highlight
+  let lastHighlightPos = plainTextShadow.lastIndexOf(`<span class="SA_HIGHLIGHT"`); //finds last highlight
   let numOfExtraCharactersForContext = 150; 
   let startingDots = "...";
   let endingDots = "...";
 
-  let sliceStartPoint = startHighlightPos - numOfExtraCharactersForContext; 
+  let sliceStartPoint = firstHighlightPos - numOfExtraCharactersForContext;
   if (sliceStartPoint <= 0){
     sliceStartPoint = 0;
     startingDots = "";
   } 
-
-  let sliceEndPoint = startHighlightPos + newInner.length + numOfExtraCharactersForContext; 
+  let sliceEndPoint = lastHighlightPos + lastHighlightTextLength + numOfExtraCharactersForContext;
   if (sliceEndPoint > plainTextShadow.length){
     sliceEndPoint = plainTextShadow.length;
     endingDots = "";
   } 
-
   let shortenedPlainTextShadow = plainTextShadow.slice(sliceStartPoint, sliceEndPoint);
   let reportHTML = `<p>${startingDots}${shortenedPlainTextShadow}${endingDots}</p>`;
 
+  return reportHTML;
+
+  
   // TODO further sanitizing for code 
   // hypothetically an author could write code in their text that stays as text until
   // I send it out in the email, then gets converted to html / css / js. 
-  return reportHTML;
+  
 }
 
 function itemIsAlreadyInState(id){
@@ -207,13 +226,35 @@ function getIdFromHighlight(tag) {
   return highlighter.getHighlightForElement(tag).id;
 }
 
+function removeExtraCommentComponents(itemId){
+  //check number of tags for the Id. If multiple tags, remove all comments but the last 
+
+  let numberOfTags = state.items.map( item => {
+    if (item.id === itemId) return item.numOfTags;
+  })
+
+  let commentComponentList; 
+
+  if (numberOfTags > 1){
+    commentComponentList = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_comment`);
+    for (i = 0; i < numberOfTags; i++) {
+      if (i != numberOfTags - 1) {
+        commentComponentList[i].remove(); 
+      }
+    }
+  }
+}
+
 //-------------------------------------------
 // Comments
 
 const commentHTML =
   "<form class='h_comment'>" +
     "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" +
-    "<div class='h_close'></div>" +
+    "<div class='h_close'>" + 
+     // `<svg style='width:16px; height:16px' viewbox='0 0 100 100'> <g id="Version-One" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="Desktop-HD" 
+     //   fill="#AAAAAA" fill-rule="nonzero"><path d="M316.070312,611 L320.5,605.03125 L316.59375,599.546875 L318.398438,599.546875 L320.476562,602.484375 C320.908856,603.093753 321.216145,603.562498 321.398438,603.890625 C321.653647,603.473956 321.955727,603.039065 322.304688,602.585938 L324.609375,599.546875 L326.257812,599.546875 L322.234375,604.945312 L326.570312,611 L324.695312,611 L321.8125,606.914062 C321.651041,606.679686 321.484376,606.424481 321.3125,606.148438 C321.05729,606.565106 320.875001,606.851562 320.765625,607.007812 L317.890625,611 L316.070312,611 Z" id="X"></path></g></g></svg>` +
+    "</div>" +
   "</form>"
 
 function addCommentComponent(tag, itemId){

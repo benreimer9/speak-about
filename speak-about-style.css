@@ -1,6 +1,6 @@
 .highlight,
 .highlighty {
-    background-color: #FFA8A8;
+    background-color:rgba(255, 168, 168, 0.8);
 }
 ::selection {
     background-color: #FFA8A8 !important;
@@ -25,9 +25,10 @@
 .h_close {
     cursor: pointer;
     position: absolute;
-    top:0px;
-    right:0px;
-    background-color:#ededed;
+    top:-3px;
+    right:-3px;
+    /* background-color:#fff; */
+    border: 3px solid #FFA8A8;
     box-shadow: 0px 1px 1px 0px rgba(0,0,0,0.11);
     color:#999;
     border-radius: 100%;
@@ -37,12 +38,18 @@
     display: flex;
     justify-content:center;
     align-items:center;
+    transform: all .2s ease;
 }
 .hidden {
-    width: 15px;
-    height: 15px;
-    overflow: hidden;
-    top: -15px;
+    height: 0; 
+    width: 0;
+}
+.hidden input {
+    display:none;
+}
+.hidden .h_close {
+    background-color:#FFA8A8;
+    top: 36px;
 }
 
 /* #popup {
