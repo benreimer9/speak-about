@@ -71,8 +71,9 @@ let state = {
        numOfTags:0,
      },
     */
-  ]
-}
+  ],
+};
+let report = "<p>This report is empty! Please let speakaboutbeta@gmail.com know, you shouldn't be getting bothered with empty reports.</p>";
 s = state;
 
 function setupSpeakAbout(){
@@ -82,8 +83,21 @@ function setupSpeakAbout(){
       buildNewItem();
     }
   });
+
+  /* Avoiding the "unsaved changes" alert 
+  ---------------------------------------
+  Chrome : sendMail("<p>example</p>") works, no other lines of code
+  - adding event.returnValue = undefined; does NOT WORK
+
+  */
+
   window.addEventListener('beforeunload', (event) => {
-    sendReport(event);
+    event.preventDefault();
+    
+    //sendMail(state.report);
+    // console.log('texttt ', txt);
+    // event.returnValue = undefined;
+    sendMail(report);
   });
 }
 
@@ -109,6 +123,7 @@ function buildNewItem(){
     addItemToState(tag, itemId);
   });
   removeExtraCommentComponents(itemId);
+  updateReport();
 }
 
 function getHighlightEl(tag){
@@ -147,16 +162,9 @@ function addItemToState(tag, itemId){
   }
 }
 
-// function getHighlightTextContext(tag, itemId) {
 
-//   //I have the parent Element
-//   //I need to have this update 
-//   //let parentElement = getHighlightEl(tag).getRange().commonAncestorContainer.innerHTML;
-
-// }
 function getHighlightTextContext(tag, itemId) {
 
-  
   let elem = getHighlightEl(tag);
   let getRange = elem.getRange()
   let parentElement = getRange.commonAncestorContainer.innerHTML;
@@ -297,7 +305,8 @@ function submitComment(tag, itemId){
   let comment = document.querySelector(`mark[h_id = "${itemId}"] input`).value;
   state.items.forEach(item => {
     if (item.id === itemId)  item.comment = comment; 
-  })
+  });
+  updateReport()
 }
 
 function rerenderComponentsVisibility(){
@@ -322,14 +331,12 @@ function rerenderComponentsVisibility(){
 
 //If I'd like the ability to see highlights in context on an actual page it is possible
 // use rangy serialize https://github.com/timdown/rangy/wiki/Highlighter-Module 
-function sendReport(event){
-  event.preventDefault();
-  event.returnValue = '';
-
-  let report = "";
-
+function updateReport(){
+  
+  let buildReport = "";
+  
   state.items.forEach(item => {
-    report += `
+    buildReport += `
   <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
 <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
 	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
@@ -348,10 +355,7 @@ function sendReport(event){
 
   })
 
-  // console.log('report : ', report);
-
-  sendMail(report)
-
+  report = buildReport;
 }
 
 $(document).ready( function(){
@@ -369,7 +373,6 @@ function sendMail(report){
 
   let title = document.title;
   let titleUrl = document.location.href;
-  console.log('title ::: ', title);
   var adminHref = sa_ajax.ajaxurl;  
   var mailData = { 'action': 'siteWideMessage', 'report': report, 'title': title, 'title_url': titleUrl};
 
@@ -377,9 +380,7 @@ function sendMail(report){
     console.log('Response: ', response);
   });
   
-
 };
-
 
 
 
