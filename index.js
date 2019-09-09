@@ -8,6 +8,7 @@ https://github.com/timdown/rangy/wiki/
  -------------------------- */
  let s; 
 (function ($) {
+$(document).ready(function () {
 
 /* 
 
@@ -90,7 +91,6 @@ function setupSpeakAbout(){
   - adding event.returnValue = undefined; does NOT WORK
 
   */
-
   window.addEventListener('beforeunload', (event) => {
     event.preventDefault();
     
@@ -99,12 +99,32 @@ function setupSpeakAbout(){
     // event.returnValue = undefined;
     sendMail(report);
   });
+
+  updatePageSelectionColor();
 }
 
 function isNotJustAClick(highlight) {
   return (highlight.anchorOffset !== highlight.focusOffset);
 }
-
+function updatePageSelectionColor(){
+  //get from PHP WP options what color
+  let style = document.createElement('style');
+  style.innerHTML = `
+    .h_item {
+      background-color: #0000aa;
+    }
+    .h_close {
+      border-color: #ff0000;
+    }
+    .hidden .h_close {
+      background-color:#00ff00;
+    }
+    ::selection {
+        background-color: #ff0 !important;
+    }
+  `;
+  document.querySelector("body").insertAdjacentElement("afterbegin", style)
+}
 
 //-------------------------------------------
 // Building a new item, which can be composed of multiple <mark> tags but one itemId to unify them 
@@ -165,6 +185,7 @@ function addItemToState(tag, itemId){
 
 function getHighlightTextContext(tag, itemId) {
 
+  // TODO clean up the DOM on browser inspectors by making one shadow parent, so all shadow elements are within it. 
   let elem = getHighlightEl(tag);
   let getRange = elem.getRange()
   let parentElement = getRange.commonAncestorContainer.innerHTML;
@@ -358,7 +379,7 @@ function updateReport(){
   report = buildReport;
 }
 
-$(document).ready( function(){
+
   // document.querySelector("#contact").addEventListener("submit", e => {
   //    e.preventDefault() 
   //   var highlight = "highlight1"
@@ -366,7 +387,7 @@ $(document).ready( function(){
   //   var email = "email3"
   //   sendMail(highlight, comment, email)
   // });
-});
+
 
 
 function sendMail(report){
@@ -403,5 +424,5 @@ let postHighlightText = parentText.slice(startOfPostHighlight)
 
 setupSpeakAbout()
 
-
+});
 }(jQuery))

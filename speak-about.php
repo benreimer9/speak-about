@@ -27,6 +27,7 @@ function speakabout_enqueue_script() {
 	wp_enqueue_script('rangyhighlighter', plugin_dir_url(__FILE__) . 'rangy-highlighter.js');
 	wp_enqueue_script('index', plugin_dir_url(__FILE__) . 'index.js', array('jquery'));
 	wp_enqueue_style('speakaboutstyle', plugin_dir_url(__FILE__) . 'speak-about-style.css');
+	wp_enqueue_script( 'settingspage', plugin_dir_url(__FILE__) . 'speak-about-settings.css' );
 	wp_localize_script( 'index', 'sa_ajax', array( 
 	'ajaxurl' => admin_url( 'admin-ajax.php')
 	));
@@ -87,18 +88,26 @@ function wpse_sendmail()
 add_action( 'admin_menu', 'speakabout_add_admin_menu' );
 add_action( 'admin_init', 'speakabout_settings_init' );
 
+function my_plugin_scripts($hook) {
+    if ( 'settings_page_speakabout_settings' != $hook ) {
+        return;
+    }
+	wp_enqueue_style( 'speakaboutsettings', plugins_url('speak-about-settings.css', __FILE__));
+	wp_enqueue_script('speakaboutsettings_js', plugin_dir_url(__FILE__) . 'speak-about-settings.js', array('jquery'));
+}
+add_action( 'admin_enqueue_scripts', 'my_plugin_scripts' );
+
 
 function speakabout_add_admin_menu() {
 	add_options_page( 'SpeakAbout Options', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page' );
 }
 
-
 function speakabout_settings_init(  ) {
 	register_setting( 'saPlugin', 'speakAbout_settings' );
     add_settings_section(
-        'saPlugin_section',
+        'saPlugin_section_email',
         __( 'Email', 'wordpress' ),
-        'stp_api_settings_section_callback',
+        'speakAbout_email_section_callback',
         'saPlugin'
 	);
 	add_settings_field(
@@ -106,14 +115,27 @@ function speakabout_settings_init(  ) {
         __( 'Email Subject Line:', 'wordpress' ),
         'speakAbout_report_title_render',
         'saPlugin',
-        'saPlugin_section'
+        'saPlugin_section_email'
     );
     add_settings_field(
         'speakAbout_report_email',
         __( 'Email Address:', 'wordpress' ),
         'speakAbout_report_email_render',
         'saPlugin',
-        'saPlugin_section'
+        'saPlugin_section_email'
+	);
+	add_settings_section(
+        'saPlugin_section_highlighter',
+        __( 'Highlighter', 'wordpress' ),
+        'speakAbout_highlighter_section_callback',
+        'saPlugin'
+	);
+	add_settings_field(
+        'speakAbout_highlight_color',
+        __( 'Highlighter color:', 'wordpress' ),
+        'speakAbout_highlight_color_render',
+        'saPlugin',
+        'saPlugin_section_highlighter'
     );
 }
 function speakAbout_report_title_render(  ) {
@@ -128,9 +150,46 @@ function speakAbout_report_email_render(  ) {
     <input type='text' style="width: 250px" name='speakAbout_settings[speakAbout_report_email]' value='<?php echo $options['speakAbout_report_email']; ?>'>
     <?php
 }
+function speakAbout_highlight_color_render(  ) {
+	$options = get_option( 'speakAbout_settings' );
+	$color = $options['speakAbout_highlight_color'];
+	$isCustom = false;
+	$customValue = "#dddddd";
 
-function stp_api_settings_section_callback(  ) {
-    echo __( 'Change your email settings', 'wordpress' );
+		if ($color == "red" || $color == "yellow" || $color == "green" || $color == "blue"){
+		}
+		else if (empty($color)){
+			$color == "red";
+		}
+		else {
+			$customValue = $color;
+			$isCustom = true;
+		}
+    ?>
+		<div class="switch-field">
+			<input type="radio" id="radio-red" name="speakAbout_settings[speakAbout_highlight_color]" value="red" checked  <?php checked($color, "red") ?> />
+			<label for="radio-red">Red</label>
+			<input type="radio" id="radio-yellow" name="speakAbout_settings[speakAbout_highlight_color]" value="yellow" <?php checked($color, "yellow") ?>  />
+			<label for="radio-yellow">Yellow</label>
+			<input type="radio" id="radio-green" name="speakAbout_settings[speakAbout_highlight_color]" value="green" <?php checked($color, "green") ?>  />
+			<label for="radio-green">Green</label>
+			<input type="radio" id="radio-blue" name="speakAbout_settings[speakAbout_highlight_color]" value="blue"   <?php checked($color, "blue") ?> />
+			<label for="radio-blue">Blue</label>
+			<input type="radio" id="radio-custom" name="speakAbout_settings[speakAbout_highlight_color]" value='<?php echo $customValue ?>'   <?php checked($isCustom) ?> />
+			<label for="radio-custom">
+				Custom
+				<input type="text" placeholder='<?php echo $customValue ?>' id="colorInput" value="" minlength="4" maxlength="7" spellcheck="false">
+			</label>
+			
+		</div>
+    <?php
+}
+
+function speakAbout_email_section_callback(  ) {
+    // echo __( 'Change your email settings', 'wordpress' );
+}
+function speakAbout_highlighter_section_callback(  ) {
+    // echo __( 'Change your highlighter settings', 'wordpress' );
 }
 
 function speakabout_options_page() {
