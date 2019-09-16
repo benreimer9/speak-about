@@ -109,20 +109,20 @@ function isNotJustAClick(highlight) {
 function updatePageSelectionColor(){
   //get from PHP WP options what color
   let style = document.createElement('style');
-  style.innerHTML = `
-    .h_item {
-      background-color: #0000aa;
-    }
-    .h_close {
-      border-color: #ff0000;
-    }
-    .hidden .h_close {
-      background-color:#00ff00;
-    }
-    ::selection {
-        background-color: #ff0 !important;
-    }
-  `;
+  // style.innerHTML = `
+  //   .h_item {
+  //     background-color: #0000aa;
+  //   }
+  //   .h_close {
+  //     border-color: #ff0000;
+  //   }
+  //   .hidden .h_close {
+  //     background-color:#00ff00;
+  //   }
+  //   ::selection {
+  //       background-color: #ff0 !important;
+  //   }
+  // `;
   document.querySelector("body").insertAdjacentElement("afterbegin", style)
 }
 
