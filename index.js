@@ -392,6 +392,9 @@ function updateReport(){
 
 function sendMail(report){
 
+  if (report === "<p>This report is empty! Please let speakaboutbeta@gmail.com know, you shouldn't be getting bothered with empty reports.</p>"){
+    return;
+  }
   let title = document.title;
   let titleUrl = document.location.href;
   var adminHref = sa_ajax.ajaxurl;  

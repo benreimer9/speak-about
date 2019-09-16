@@ -27,7 +27,7 @@ function speakabout_enqueue_script() {
 	wp_enqueue_script('rangyhighlighter', plugin_dir_url(__FILE__) . 'rangy-highlighter.js');
 	wp_enqueue_script('index', plugin_dir_url(__FILE__) . 'index.js', array('jquery'));
 	wp_enqueue_style('speakaboutstyle', plugin_dir_url(__FILE__) . 'speak-about-style.css');
-	wp_enqueue_script( 'settingspage', plugin_dir_url(__FILE__) . 'speak-about-settings.css' );
+	wp_enqueue_style( 'settingspage', plugin_dir_url(__FILE__) . 'speak-about-settings.css' );
 	wp_localize_script( 'index', 'sa_ajax', array( 
 	'ajaxurl' => admin_url( 'admin-ajax.php')
 	));
