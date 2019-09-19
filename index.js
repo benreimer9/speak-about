@@ -107,22 +107,23 @@ function isNotJustAClick(highlight) {
   return (highlight.anchorOffset !== highlight.focusOffset);
 }
 function updatePageSelectionColor(){
-  //get from PHP WP options what color
+  
+  console.log('highlightColor ', highlightColor);
   let style = document.createElement('style');
-  // style.innerHTML = `
-  //   .h_item {
-  //     background-color: #0000aa;
-  //   }
-  //   .h_close {
-  //     border-color: #ff0000;
-  //   }
-  //   .hidden .h_close {
-  //     background-color:#00ff00;
-  //   }
-  //   ::selection {
-  //       background-color: #ff0 !important;
-  //   }
-  // `;
+  style.innerHTML = `
+    .h_item {
+      background-color: ${highlightColor};
+    }
+    .h_close {
+      border-color: ${highlightColor};
+    }
+    .hidden .h_close {
+      background-color: ${highlightColor};
+    }
+    ::selection {
+        background-color: ${highlightColor} !important;
+    }
+  `;
   document.querySelector("body").insertAdjacentElement("afterbegin", style)
 }
 

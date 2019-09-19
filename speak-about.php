@@ -12,13 +12,6 @@ Version: 1.0.0
 Author URI: https://www.benreimer.design
 */
 
-//THE EXAMPLE
-// add_action( 'the_content', 'my_thank_you_text' );
-
-// function my_thank_you_text ( $content ) {
-// 	$urll = admin_url("admin-ajax.php");
-//     return $content .= $urll;
-// }
 
 //ENQUEUE MY JS
 function speakabout_enqueue_script() { 
@@ -31,16 +24,12 @@ function speakabout_enqueue_script() {
 	wp_localize_script( 'index', 'sa_ajax', array( 
 	'ajaxurl' => admin_url( 'admin-ajax.php')
 	));
-	// wp_localize_script('index', 'sa_ajax', array(
-   	// 'pluginsUrl' => plugins_url(),
-	// ));
 }
 add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
 
 
+
 // Email the report
-// add_action( 'wp_ajax_my_action', 'email_report' );
-// add_action( 'wp_ajax_nopriv_my_action', 'email_report' );
 add_action( 'wp_ajax_siteWideMessage', 'wpse_sendmail' );
 add_action( 'wp_ajax_nopriv_siteWideMessage', 'wpse_sendmail' );
 
@@ -75,13 +64,6 @@ function wpse_sendmail()
 	wp_mail( $to, $subject, $message, $headers);
     die();
 }
-
-
-
-
-
-
-
 
 
 /** Options Admin */
@@ -150,6 +132,7 @@ function speakAbout_report_email_render(  ) {
     <input type='text' style="width: 250px" name='speakAbout_settings[speakAbout_report_email]' value='<?php echo $options['speakAbout_report_email']; ?>'>
     <?php
 }
+
 function speakAbout_highlight_color_render(  ) {
 	$options = get_option( 'speakAbout_settings' );
 	$color = $options['speakAbout_highlight_color'];
@@ -185,6 +168,8 @@ function speakAbout_highlight_color_render(  ) {
     <?php
 }
 
+
+
 function speakAbout_email_section_callback(  ) {
     // echo __( 'Change your email settings', 'wordpress' );
 }
@@ -210,3 +195,34 @@ function speakabout_options_page() {
     </form>
     <?php
 }
+
+function highlightColorToJS(){
+	$options = get_option( 'speakAbout_settings' );
+	$color = $options['speakAbout_highlight_color'];
+	?>
+		<script>
+			var highlightColor = <?php echo json_encode($color, JSON_HEX_TAG); ?>; // Don't forget the extra semicolon!
+
+			var colorBank = {
+				red : "#f38c8c",
+				yellow: "#f3ec8c",
+				green: "#98f38c",
+				blue : "#8cc1f3",
+			}
+
+			if (colorBank[highlightColor]){
+				highlightColor = colorBank[highlightColor]; 
+			}
+			else if (!highlightColor.startsWith("#")){
+				console.error("color doesn't seem to be in proper Hex form : ", highlightColor);
+				highlightColor = "#" + highlightColor; 
+			}			
+		</script>
+	<?php
+
+}
+highlightColorToJS();
+
+?>
+
+
