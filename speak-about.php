@@ -28,8 +28,130 @@ function speakabout_enqueue_script() {
 add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
 
 
+/* CRON JOB TEST
+ ----------------------------- */
+add_action( 'speakabout_cron_hook', 'speakabout_cron_exec' );
 
-// Email the report
+if ( ! wp_next_scheduled( 'speakabout_cron_hook' ) ) {
+    wp_schedule_event( time(), 'twicedaily', 'speakabout_cron_hook');
+}
+
+function speakabout_cron_hook(){
+
+}
+
+$timestamp = wp_next_scheduled( 'speakabout_cron_hook' );
+wp_unschedule_event( $timestamp, 'speakabout_cron_hook' );
+
+
+/* BUILD THE DATABASE
+ ----------------------------- */
+
+global $speakabout_db_version;
+$speakabout_db_version = '1.0';
+
+function speakabout_install(){
+	global $wpdb; 
+	global $speakabout_db_version;
+
+	$table_name = $wpdb->prefix . 'speakabout';
+	$charset_collate = $wpdb->get_charset_collate();
+
+	$sql = "CREATE TABLE $table_name (
+		id mediumint(9) NOT NULL AUTO_INCREMENT,
+		time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+		commenter_id int NOT NULL,
+		highlight_id int NOT NULL,
+		highlight text NOT NULL,
+		highlight_with_context text NOT NULL,
+		comment text NOT NULL,
+		page_name text NOT NULL,
+		page_url text NOT NULL,
+		has_been_emailed boolean NOT NULL default 0,
+		PRIMARY KEY  (id)
+	) $charset_collate;";
+
+	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+	dbDelta( $sql );
+
+	add_option( 'jal_db_version', $jal_db_version );
+	
+	$installed_ver = get_option( "jal_db_version" );
+
+	if ( $installed_ver != $jal_db_version ) {
+		//update the db if necessary
+	}
+}
+
+function speakabout_update_db_check() {
+    global $speakabout_db_version;
+    if ( get_site_option( 'speakabout_db_version' ) != $speakabout_db_version ) {
+        speakabout_install();
+    }
+}
+add_action( 'plugins_loaded', 'speakabout_update_db_check' );
+register_activation_hook( __FILE__, 'speakabout_install' );
+
+
+
+/* SEND TO DATABASE
+ ----------------------------- */
+//TODO remove all the extra global wpdb's, ya? 
+/*
+0. Get from JS
+1. identify if this is updating a comment or adding a new one ( get from JS )
+a) update the record
+b) add a new record
+*/ 
+
+add_action( 'wp_ajax_speakAboutComment', 'sa_store_comment' );
+add_action( 'wp_ajax_nopriv_speakAboutComment', 'sa_store_comment' );
+
+function sa_store_comment(){
+	global $wpdb;
+
+	$comment_id = 1;
+	$highlight_id = 2;
+	$highlight = "highlight";
+	$highlight_with_context = "this is the highlight with context";
+	$comment = "my comment";
+	$page_name = "introduction to commenting";
+	$page_url = "www.test.com";
+	$has_been_emailed = 0;
+
+	$table_name = $wpdb->prefix . 'speakabout';
+	
+	$wpdb->insert( 
+		$table_name, 
+		array( 
+			'time' => current_time( 'mysql' ), 
+			'commenter_id' => $commenter_id, 
+			'highlight' => $highlight, 
+			'highlight_with_context' => $highlight_with_context, 
+			'comment' => $comment, 
+			'page_name' => $page_name, 
+			'page_url' => $page_url, 
+			'has_been_emailed' => $has_been_emailed, 
+		) 
+	);
+}
+
+
+/* DECIDE WHAT REPORTS TO SEND
+ ----------------------------- */
+function sendNewReports(){
+	//search through db for unsent comments and call the send function
+// 	global $wpdb;
+//     $results = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}liveshoutbox", OBJECT);
+
+//    foreach ( $results as $result ) {
+//       echo $result->name;
+//    }
+}
+
+
+/* EMAIL THE REPORT
+ ----------------------------- */
 add_action( 'wp_ajax_siteWideMessage', 'wpse_sendmail' );
 add_action( 'wp_ajax_nopriv_siteWideMessage', 'wpse_sendmail' );
 
@@ -66,7 +188,8 @@ function wpse_sendmail()
 }
 
 
-/** Options Admin */
+/* OPTIONS ADMIN 
+ ----------------------------- */
 add_action( 'admin_menu', 'speakabout_add_admin_menu' );
 add_action( 'admin_init', 'speakabout_settings_init' );
 
@@ -222,7 +345,4 @@ function highlightColorToJS(){
 
 }
 highlightColorToJS();
-
 ?>
-
-
