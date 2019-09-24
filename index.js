@@ -97,7 +97,7 @@ function setupSpeakAbout(){
     //sendMail(state.report);
     // console.log('texttt ', txt);
     // event.returnValue = undefined;
-    sendMail(report);
+    //sendMail(report);
   });
 
   updatePageSelectionColor();
@@ -108,23 +108,24 @@ function isNotJustAClick(highlight) {
 }
 function updatePageSelectionColor(){
   
-  console.log('highlightColor ', highlightColor);
-  let style = document.createElement('style');
-  style.innerHTML = `
-    .h_item {
-      background-color: ${highlightColor};
-    }
-    .h_close {
-      border-color: ${highlightColor};
-    }
-    .hidden .h_close {
-      background-color: ${highlightColor};
-    }
-    ::selection {
-        background-color: ${highlightColor} !important;
-    }
-  `;
-  document.querySelector("body").insertAdjacentElement("afterbegin", style)
+  if (typeof highlightColor !== 'undefined') {
+    let style = document.createElement('style');
+    style.innerHTML = `
+      .h_item {
+        background-color: ${highlightColor};
+      }
+      .h_close {
+        border-color: ${highlightColor};
+      }
+      .hidden .h_close {
+        background-color: ${highlightColor};
+      }
+      ::selection {
+          background-color: ${highlightColor} !important;
+      }
+    `;
+    document.querySelector("body").insertAdjacentElement("afterbegin", style)
+  }
 }
 
 //-------------------------------------------
@@ -326,9 +327,24 @@ function submitComment(tag, itemId){
   //take innerText, add to state ID 
   let comment = document.querySelector(`mark[h_id = "${itemId}"] input`).value;
   state.items.forEach(item => {
-    if (item.id === itemId)  item.comment = comment; 
+    if (item.id === itemId){
+      item.comment = comment; 
+    }  
   });
-  updateReport()
+  buildFeedbackObj(itemId);
+}
+
+function buildFeedbackObj(itemId){
+  // This is mostly unnecessary, but does make things a bit cleaner later on. 
+  var feedback = {};
+  state.items.forEach(item => {
+    if (item.id === itemId) {
+      feedback.highlight = item.highlightText;
+      feedback.highlightWithContext = item.highlightTextContext;
+      feedback.comment = item.comment; 
+    }
+  });
+  sendFeedbackToDB(feedback);
 }
 
 function rerenderComponentsVisibility(){
@@ -348,64 +364,100 @@ function rerenderComponentsVisibility(){
   })
 }
 
-//-------------------------------------------
+
 // Sending Report 
+//-------------------------------------------
 
-//If I'd like the ability to see highlights in context on an actual page it is possible
-// use rangy serialize https://github.com/timdown/rangy/wiki/Highlighter-Module 
-function updateReport(){
-  
-  let buildReport = "";
-  
-  state.items.forEach(item => {
-    buildReport += `
-  <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
-<div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
-	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
-			${item.highlightTextContext}</div>
-</div>
-<!--[if mso]></td></tr></table><![endif]-->
-<!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 0px; padding-bottom: 0px; font-family: Arial, sans-serif"><![endif]-->
-<div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:0px;padding-right:10px;padding-bottom:20px;padding-left:10px;">
-	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
-		<p style="font-size: 14px; line-height: 24px; margin: 0;font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:2px 0px;">
-			<span style="font-size: 18px;">${item.comment}</span>
-		</p>
-	</div>
-</div>
-`
-
-  })
-
-  report = buildReport;
+function getUserId(){
+  if (storageAvailable('localStorage')) {
+    var userId = getUserIdFromStorage();
+    if (userId) {
+      return userId;
+    } else {
+      return createUserId();
+    }
+  }
+  else {
+    return "anonymous";
+  }
+}
+function getUserIdFromStorage() {
+  return localStorage.getItem('speakabout_userId');
+}
+function createUserId() {
+  var id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+  localStorage.setItem('speakabout_userId', id);
 }
 
 
-  // document.querySelector("#contact").addEventListener("submit", e => {
-  //    e.preventDefault() 
-  //   var highlight = "highlight1"
-  //   var comment = "comment2"
-  //   var email = "email3"
-  //   sendMail(highlight, comment, email)
-  // });
 
 
 
-function sendMail(report){
+function sendFeedbackToDB(feedback){
 
-  if (report === "<p>This report is empty! Please let speakaboutbeta@gmail.com know, you shouldn't be getting bothered with empty reports.</p>"){
-    return;
+  //TODO 
+
+  if (feedback === "<p>This report is empty! Please let speakaboutbeta@gmail.com know, you shouldn't be getting bothered with empty reports.</p>"){
+    return; // change this default feedback? 
   }
-  let title = document.title;
-  let titleUrl = document.location.href;
+
+  var userId = getUserId(); 
+  var highlight = feedback.highlight; 
+  var highlightWithContext = feedback.highlightWithContext;
+  var comment = feedback.comment; 
+  var pageName = document.title;
+  var pageURL = document.location.href;
   var adminHref = sa_ajax.ajaxurl;  
-  var mailData = { 'action': 'siteWideMessage', 'report': report, 'title': title, 'title_url': titleUrl};
+
+  var obj = {};
+  obj.userId = userId;
+  obj.highlight = highlight;
+  obj.highlightWithContext = highlightWithContext;
+  obj.comment = comment;
+  obj.pageName = pageName;
+  obj.pageURL = pageURL;
+  console.table(obj);
+
+  var mailData = { 'action': 'siteWideMessage', 'userId': userId, 'highlight': highlight, 'highlightWithContext': highlightWithContext, 'comment': comment, 'pageName': pageName, 'pageURL': pageURL};
 
   $.post(adminHref, mailData, function (response) {
     console.log('Response: ', response);
   });
   
 };
+
+
+
+  //If I'd like the ability to see highlights in context on an actual page it is possible
+  // use rangy serialize https://github.com/timdown/rangy/wiki/Highlighter-Module 
+  function updateReport() {
+    //   let buildReport = "";
+
+    //   state.items.forEach(item => {
+    //     buildReport += `
+    //   <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
+    // <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
+    // 	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
+    // 			${item.highlightTextContext}</div>
+    // </div>
+    // <!--[if mso]></td></tr></table><![endif]-->
+    // <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 0px; padding-bottom: 0px; font-family: Arial, sans-serif"><![endif]-->
+    // <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:0px;padding-right:10px;padding-bottom:20px;padding-left:10px;">
+    // 	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
+    // 		<p style="font-size: 14px; line-height: 24px; margin: 0;font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:2px 0px;">
+    // 			<span style="font-size: 18px;">${item.comment}</span>
+    // 		</p>
+    // 	</div>
+    // </div>
+    // `
+
+    //   })
+
+    //   report = buildReport;
+  }
 
 
 
@@ -425,6 +477,32 @@ let beginningOffset = startIndex + startOffset;
 let preHighlightText = parentText.slice(0, beginningOffset)
 let postHighlightText = parentText.slice(startOfPostHighlight)
 */
+
+
+function storageAvailable(type) {
+  //check if localstorage is available. From https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
+  var storage;
+  try {
+    storage = window[type];
+    var x = '__storage_test__';
+    storage.setItem(x, x);
+    storage.removeItem(x);
+    return true;
+  } catch (e) {
+    return e instanceof DOMException && (
+        // everything except Firefox
+        e.code === 22 ||
+        // Firefox
+        e.code === 1014 ||
+        // test name field too, because code might not be present
+        // everything except Firefox
+        e.name === 'QuotaExceededError' ||
+        // Firefox
+        e.name === 'NS_ERROR_DOM_QUOTA_REACHED') &&
+      // acknowledge QuotaExceededError only if there's something already stored
+      (storage && storage.length !== 0);
+  }
+}
 
 setupSpeakAbout()
 

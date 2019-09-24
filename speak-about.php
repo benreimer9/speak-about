@@ -46,7 +46,6 @@ wp_unschedule_event( $timestamp, 'speakabout_cron_hook' );
 
 /* BUILD THE DATABASE
  ----------------------------- */
-
 global $speakabout_db_version;
 $speakabout_db_version = '1.0';
 
@@ -96,7 +95,7 @@ register_activation_hook( __FILE__, 'speakabout_install' );
 
 /* SEND TO DATABASE
  ----------------------------- */
-//TODO remove all the extra global wpdb's, ya? 
+// remove all the extra global wpdb's, ya? 
 /*
 0. Get from JS
 1. identify if this is updating a comment or adding a new one ( get from JS )
@@ -184,6 +183,9 @@ function wpse_sendmail()
 	
 	$headers = array('Content-Type: text/html; charset=UTF-8');
 	wp_mail( $to, $subject, $message, $headers);
+
+	echo "test response";
+
     die();
 }
 
@@ -319,19 +321,25 @@ function speakabout_options_page() {
     <?php
 }
 
+?>
+
+
+<?php
+
 function highlightColorToJS(){
+	//TODO only let this run on pages that need it. This will stop it from outputting unexpected characters upon plugin installation
 	$options = get_option( 'speakAbout_settings' );
 	$color = $options['speakAbout_highlight_color'];
 	?>
 		<script>
-			var highlightColor = <?php echo json_encode($color, JSON_HEX_TAG); ?>; // Don't forget the extra semicolon!
+			var highlightColor = <?php echo json_encode($color, JSON_HEX_TAG); ?>;
 
 			var colorBank = {
 				red : "#f38c8c",
 				yellow: "#f3ec8c",
 				green: "#98f38c",
 				blue : "#8cc1f3",
-			}
+			};
 
 			if (colorBank[highlightColor]){
 				highlightColor = colorBank[highlightColor]; 
@@ -339,7 +347,7 @@ function highlightColorToJS(){
 			else if (!highlightColor.startsWith("#")){
 				console.error("color doesn't seem to be in proper Hex form : ", highlightColor);
 				highlightColor = "#" + highlightColor; 
-			}			
+			};			
 		</script>
 	<?php
 
