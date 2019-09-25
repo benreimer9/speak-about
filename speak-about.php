@@ -27,17 +27,15 @@ function speakabout_enqueue_script() {
 }
 add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
 
-
-
 /* CRON JOB TEST
  ----------------------------- */
 
-add_filter( 'cron_schedules', 'ten_second_interval' );
+add_filter( 'cron_schedules', 'thirty_second_interval' );
  
-function ten_second_interval( $schedules ) {
-    $schedules['ten_seconds'] = array(
-        'interval' => 10,
-        'display'  => esc_html__( 'Every Ten Seconds' ),
+function thirty_second_interval( $schedules ) {
+    $schedules['thirty_seconds'] = array(
+        'interval' => 30,
+        'display'  => esc_html__( 'Every Thirty Seconds' ),
     );
     return $schedules;
 }
@@ -46,7 +44,7 @@ function ten_second_interval( $schedules ) {
 add_action( 'speakabout_cron_hook', 'speakabout_cron_exec' );
 
 if ( ! wp_next_scheduled( 'speakabout_cron_hook' ) ) {
-    wp_schedule_event( time(), 'ten_seconds', 'speakabout_cron_hook');
+    wp_schedule_event( time(), 'thirty_seconds', 'speakabout_cron_hook');
 }
 
 function speakabout_cron_exec(){
@@ -55,7 +53,6 @@ function speakabout_cron_exec(){
 
 // $timestamp = wp_next_scheduled( 'speakabout_cron_hook' );
 // wp_unschedule_event( $timestamp, 'speakabout_cron_hook' );
-
 
 /* BUILD THE DATABASE
  ----------------------------- */
@@ -271,7 +268,6 @@ function send_email($report){
     die();
 }
 
-
 /* OPTIONS ADMIN 
  ----------------------------- */
 add_action( 'admin_menu', 'speakabout_add_admin_menu' );
@@ -401,49 +397,91 @@ function speakabout_options_page() {
 }
 
 function highlightColorToJS(){
-	//TODO only let this run on pages that need it. This will stop it from outputting unexpected characters upon plugin installation
 	$options = get_option( 'speakAbout_settings' );
 	$color = $options['speakAbout_highlight_color'];
-	?>
-		<script>
-			var highlightColor = <?php echo json_encode($color, JSON_HEX_TAG); ?>;
 
-			var colorBank = {
-				red : "#f38c8c",
-				yellow: "#f3ec8c",
-				green: "#98f38c",
-				blue : "#8cc1f3",
-			};
+	if ($color == "red") $color = "#f38c8c";
+	if ($color == "yellow") $color = "#f3ec8c";
+	if ($color == "green") $color = "#98f38c";
+	if ($color == "blue") $color = "#8cc1f3";
 
-			if (colorBank[highlightColor]){
-				highlightColor = colorBank[highlightColor]; 
-			}
-			else if (!highlightColor.startsWith("#")){
-				console.error("color doesn't seem to be in proper Hex form : ", highlightColor);
-				highlightColor = "#" + highlightColor; 
-			};			
-		</script>
-	<?php
-
+	return '<script> var highlightColor = "' . $color . '"</script>'; 
 }
-if ( ! is_admin() ) {
-	highlightColorToJS();
+
+
+
+
+function add_speakabout_to_page($content) {
+
+	//TODO make sure all of speakabout, not just the highlighter, only runs on pages, and only ** within **  the post
+	if( is_singular() && is_main_query() ) {
+		$speakabout_content = highlightColorToJS();
+		$content .= $speakabout_content;	
+	}	
+	return $content;
 }
+add_filter('the_content', 'add_speakabout_to_page');
+
+
+// add_filter( 'the_content', 'add_speakabout_to_page', 10 );
+// function add_speakabout_to_page( $content ) {
+
+// 	$allowed = array('page'); //hardcode for now 
+
+// 	if ( ! is_admin() ) {
+// 		if (is_page() && in_array('page', $allowed)){
+			
+// 			highlightColorToJS();
+// 			return  $content; 
+// 		}
+// 	}
+// }
+ 
+
+
+
+// function add_speakabout_to_page( $content ) {
+ 
+//     // Check if we're inside the main loop in a single post page.
+//     if ( is_single() && in_the_loop() && is_main_query() ) {
+//         return $content . esc_html__("I'm filtering the content inside the main loop", "my-textdomain");
+//     }
+ 
+//     return $content;
+// }
+
+
+// what parts of the site to allow highlighter functionality
+	// $types = !empty($options['highlighter_enable']) ? $options['highlighter_enable'] : array();
+	// $types_cpts = !empty($options['highlighter_cpts']) ? $options['highlighter_cpts'] : array();
+	// if(isset($options['highlighter_cpts_manual'])) {
+	// 	$val = preg_replace('/\s+/', '', $options['highlighter_cpts_manual']);
+	// 	if(strpos($val, ',') !== false) {
+	// 		$types_cpts_manual = explode(',', $val);
+	// 	} else {
+	// 		$types_cpts_manual = array($val);
+	// 	}
+	// }
+	// $types = array_merge($types, (array)$types_cpts, $types_cpts_manual);
+
+	// if(is_page() && in_array('page', $types)) $allow = true;
+	// if(is_archive() && in_array('archive', $types)) $allow = true;
+	// if(is_front_page() && in_array('home', $types)) $allow = true;
+	// if(is_home() && in_array('blog', $types)) $allow = true;
+	// if(is_singular(get_post_type()) && in_array(get_post_type(), $types)) $allow = true;
+
+	// // check to see if this post is individually or categorically disabled
+	// if(isset($options['category_disable'])) {
+	// 	if(!empty($options['category_disable'])) {
+	// 		if(has_category($options['category_disable'], $postid)) {
+	// 			$allow = false;
+	// 		}
+	// 	}
+	// }
 
 
 /* 
-still outputting 338 characters after removing the highlight problem. Down from 785
-what I know... 
-1) highlightColorToJS() accounted for 447 unexpected characters 
-2) There's still 338 left.
-3) These comments do not affect it.
-4) HTML seems to do it. 
-5) speakabout_install() accounted for 336 unexpected characters - I was trying to get something that didn't exist. 
-6) something within the options panel accounts for the last 2 characters
-7) an unnecessary <?php ?> caused the last two
 
-Strategy : 
-comment out portions of code to find problematic piece. 
 
 */
 

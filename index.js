@@ -85,21 +85,6 @@ function setupSpeakAbout(){
     }
   });
 
-  /* Avoiding the "unsaved changes" alert 
-  ---------------------------------------
-  Chrome : sendMail("<p>example</p>") works, no other lines of code
-  - adding event.returnValue = undefined; does NOT WORK
-
-  */
-  window.addEventListener('beforeunload', (event) => {
-    event.preventDefault();
-    
-    //sendMail(state.report);
-    // console.log('texttt ', txt);
-    // event.returnValue = undefined;
-    //sendMail(report);
-  });
-
   updatePageSelectionColor();
 }
 
@@ -291,7 +276,7 @@ const commentHTML =
 function addCommentComponent(tag, itemId){
   tag.insertAdjacentHTML("beforeend", commentHTML);
   addEventListenersToComment(itemId);
-  document.getSelection().removeAllRanges(); //remove the browser highlight and keep just the CSS one for better UX
+  //document.getSelection().removeAllRanges(); //remove the browser highlight and keep just the CSS one for better UX
 }
 
 function addEventListenersToComment(itemId) {
