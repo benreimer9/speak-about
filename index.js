@@ -331,7 +331,10 @@ function submitComment(tag, itemId){
       item.comment = comment; 
     }  
   });
-  buildFeedbackObj(itemId);
+
+  if (comment !== ""){
+    buildFeedbackObj(itemId);
+  }
 }
 
 function buildFeedbackObj(itemId){
@@ -368,6 +371,7 @@ function rerenderComponentsVisibility(){
 // Sending Report 
 //-------------------------------------------
 
+
 function getUserId(){
   if (storageAvailable('localStorage')) {
     var userId = getUserIdFromStorage();
@@ -390,6 +394,7 @@ function createUserId() {
     return v.toString(16);
   });
   localStorage.setItem('speakabout_userId', id);
+  return id;
 }
 
 
@@ -398,13 +403,7 @@ function createUserId() {
 
 function sendFeedbackToDB(feedback){
 
-  //TODO 
-
-  if (feedback === "<p>This report is empty! Please let speakaboutbeta@gmail.com know, you shouldn't be getting bothered with empty reports.</p>"){
-    return; // change this default feedback? 
-  }
-
-  var userId = getUserId(); 
+  var userId = getUserId();
   var highlight = feedback.highlight; 
   var highlightWithContext = feedback.highlightWithContext;
   var comment = feedback.comment; 
@@ -412,17 +411,17 @@ function sendFeedbackToDB(feedback){
   var pageURL = document.location.href;
   var adminHref = sa_ajax.ajaxurl;  
 
-  var obj = {};
-  obj.userId = userId;
-  obj.highlight = highlight;
-  obj.highlightWithContext = highlightWithContext;
-  obj.comment = comment;
-  obj.pageName = pageName;
-  obj.pageURL = pageURL;
-  console.table(obj);
+  // var obj = {};
+  // obj.userId = userId;
+  // obj.highlight = highlight;
+  // obj.highlightWithContext = highlightWithContext;
+  // obj.comment = comment;
+  // obj.pageName = pageName;
+  // obj.pageURL = pageURL;
+  //console.table(obj);
 
   var mailData = { 'action': 'siteWideMessage', 'userId': userId, 'highlight': highlight, 'highlightWithContext': highlightWithContext, 'comment': comment, 'pageName': pageName, 'pageURL': pageURL};
-
+  console.log("posting feedback");
   $.post(adminHref, mailData, function (response) {
     console.log('Response: ', response);
   });
@@ -434,29 +433,30 @@ function sendFeedbackToDB(feedback){
   //If I'd like the ability to see highlights in context on an actual page it is possible
   // use rangy serialize https://github.com/timdown/rangy/wiki/Highlighter-Module 
   function updateReport() {
-    //   let buildReport = "";
+      let buildReport = "";
 
-    //   state.items.forEach(item => {
-    //     buildReport += `
-    //   <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
-    // <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
-    // 	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
-    // 			${item.highlightTextContext}</div>
-    // </div>
-    // <!--[if mso]></td></tr></table><![endif]-->
-    // <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 0px; padding-bottom: 0px; font-family: Arial, sans-serif"><![endif]-->
-    // <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:0px;padding-right:10px;padding-bottom:20px;padding-left:10px;">
-    // 	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
-    // 		<p style="font-size: 14px; line-height: 24px; margin: 0;font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:2px 0px;">
-    // 			<span style="font-size: 18px;">${item.comment}</span>
-    // 		</p>
-    // 	</div>
-    // </div>
-    // `
+      state.items.forEach(item => {
+        buildReport += `
+      <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
+    <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
+    	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
+          ${item.highlightTextContext}
+        </div>
+    </div>
+    <!--[if mso]></td></tr></table><![endif]-->
+    <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 0px; padding-bottom: 0px; font-family: Arial, sans-serif"><![endif]-->
+    <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:0px;padding-right:10px;padding-bottom:20px;padding-left:10px;">
+    	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
+    		<p style="font-size: 14px; line-height: 24px; margin: 0;font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:2px 0px;">
+    			<span style="font-size: 18px;">${item.comment}</span>
+    		</p>
+    	</div>
+    </div>
+    `
 
-    //   })
+      })
 
-    //   report = buildReport;
+      report = buildReport;
   }
 
 

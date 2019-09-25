@@ -28,20 +28,33 @@ function speakabout_enqueue_script() {
 add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
 
 
+
 /* CRON JOB TEST
  ----------------------------- */
+
+add_filter( 'cron_schedules', 'ten_second_interval' );
+ 
+function ten_second_interval( $schedules ) {
+    $schedules['ten_seconds'] = array(
+        'interval' => 10,
+        'display'  => esc_html__( 'Every Ten Seconds' ),
+    );
+    return $schedules;
+}
+
+
 add_action( 'speakabout_cron_hook', 'speakabout_cron_exec' );
 
 if ( ! wp_next_scheduled( 'speakabout_cron_hook' ) ) {
-    wp_schedule_event( time(), 'twicedaily', 'speakabout_cron_hook');
+    wp_schedule_event( time(), 'ten_seconds', 'speakabout_cron_hook');
 }
 
-function speakabout_cron_hook(){
-
+function speakabout_cron_exec(){
+	build_feedback_emails();
 }
 
-$timestamp = wp_next_scheduled( 'speakabout_cron_hook' );
-wp_unschedule_event( $timestamp, 'speakabout_cron_hook' );
+// $timestamp = wp_next_scheduled( 'speakabout_cron_hook' );
+// wp_unschedule_event( $timestamp, 'speakabout_cron_hook' );
 
 
 /* BUILD THE DATABASE
@@ -59,8 +72,7 @@ function speakabout_install(){
 	$sql = "CREATE TABLE $table_name (
 		id mediumint(9) NOT NULL AUTO_INCREMENT,
 		time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-		commenter_id int NOT NULL,
-		highlight_id int NOT NULL,
+		commenter_id text NOT NULL,
 		highlight text NOT NULL,
 		highlight_with_context text NOT NULL,
 		comment text NOT NULL,
@@ -73,11 +85,11 @@ function speakabout_install(){
 	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 	dbDelta( $sql );
 
-	add_option( 'jal_db_version', $jal_db_version );
+	add_option( 'speakabout_db_version', $speakabout_db_version );
 	
-	$installed_ver = get_option( "jal_db_version" );
+	$installed_ver = get_option( "speakabout_db_version" );
 
-	if ( $installed_ver != $jal_db_version ) {
+	if ( $installed_ver != $speakabout_db_version ) {
 		//update the db if necessary
 	}
 }
@@ -103,19 +115,19 @@ a) update the record
 b) add a new record
 */ 
 
-add_action( 'wp_ajax_speakAboutComment', 'sa_store_comment' );
-add_action( 'wp_ajax_nopriv_speakAboutComment', 'sa_store_comment' );
+add_action( 'wp_ajax_siteWideMessage', 'speakabout_store_feedback' );
+add_action( 'wp_ajax_nopriv_siteWideMessage', 'speakabout_store_feedback' );
 
-function sa_store_comment(){
+function speakabout_store_feedback(){
+
 	global $wpdb;
 
-	$comment_id = 1;
-	$highlight_id = 2;
-	$highlight = "highlight";
-	$highlight_with_context = "this is the highlight with context";
-	$comment = "my comment";
-	$page_name = "introduction to commenting";
-	$page_url = "www.test.com";
+	$commenter_id = $_POST['userId'];
+	$highlight = $_POST['highlight'];
+	$highlight_with_context = $_POST['highlightWithContext'];
+	$comment = $_POST['comment'];
+	$page_name = $_POST['pageName'];
+	$page_url = $_POST['pageURL'];
 	$has_been_emailed = 0;
 
 	$table_name = $wpdb->prefix . 'speakabout';
@@ -132,46 +144,118 @@ function sa_store_comment(){
 			'page_url' => $page_url, 
 			'has_been_emailed' => $has_been_emailed, 
 		) 
-	);
+	); 
+	die();
 }
 
 
-/* DECIDE WHAT REPORTS TO SEND
+/* DECIDE WHAT FEEDBACK TO EMAIL OUT
  ----------------------------- */
-function sendNewReports(){
-	//search through db for unsent comments and call the send function
-// 	global $wpdb;
-//     $results = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}liveshoutbox", OBJECT);
+function build_feedback_emails(){
+	//search through db for unsent comments, build reports, call send function
 
-//    foreach ( $results as $result ) {
-//       echo $result->name;
-//    }
+	global $wpdb;
+    $results = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}speakabout", OBJECT);
+
+   $commenterList = array(); //fill with users who have multiple comments to avoid sending multiple emails to them. 
+   foreach ( $results as $result ) {
+		if ($result->has_been_emailed == 0){
+			$commenterId = $result->commenter_id;
+			if (in_array($commenterId, $commenterList)){
+				//this shouldn't happen, in theory. 
+			} 
+			else {
+				//so this user is not yet in the list. 
+				//unknown number of comments
+				$userFeedback = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}speakabout WHERE commenter_id = '" . $commenterId . "'", OBJECT);
+				$numberOfComments = count($userFeedback);
+				//okay so now we know how many comments they have. 
+				//put them in the list so we don't run through their comments again
+				array_push($commenterList, $commenterId);
+				//now that we only run through them once, build the report of their feedback
+				//but you do have to go through and get each of this specific commenter
+				// ^ that's all in the feedback array
+				$emailHeader = build_email_header($result->page_url, $result->page_name);
+				$emailBase = build_email_base();
+				$report = $emailHeader;
+				
+				foreach ( $userFeedback as $feedback) {
+					if ($feedback->has_been_emailed == 0){
+						$report = $report . htmlify_feedback($feedback->highlight_with_context, $feedback->comment); 
+					}
+				}
+				set_email_bool_to_sent($commenterId);
+				$report = $report . $emailBase;
+				send_email($report);
+			}		
+		}
+   }
+}
+
+
+
+   function set_email_bool_to_sent($commenter_id){
+
+	global $wpdb;
+	$table_name = $wpdb->prefix . 'speakabout';
+
+
+	$wpdb->update( 
+		$table_name, 
+		array( 
+			'has_been_emailed' => 1,	
+		), 
+		array( 'commenter_id' => $commenter_id ), 
+		array( 
+			'%d'
+		), 
+		array( '%s' ) 
+	);
+   }
+
+   function htmlify_feedback($highlight, $comment){
+	return '  <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
+    <div style="color:#555555;font-family:Arial, Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
+    	<div style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
+          ' . $highlight . '
+        </div>
+	</div> 
+	<!--[if mso]></td></tr></table><![endif]-->
+    <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 0px; padding-bottom: 0px; font-family: Arial, sans-serif"><![endif]-->
+    <div style="color:#555555;font-family:Arial, Helvetica, sans-serif;line-height:120%;padding-top:0px;padding-right:10px;padding-bottom:20px;padding-left:10px;">
+    	<div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
+    		<p style="font-size: 14px; line-height: 24px; margin: 0;font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:2px 0px;">
+				<span style="font-size: 18px;"> 
+					' . $comment . '
+				</span>
+    		</p>
+    	</div>
+    </div> ';
+}
+
+function build_email_header($page_url, $page_title){
+	return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:v="urn:schemas-microsoft-com:vml"><head><!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]--><meta content="text/html; charset=utf-8" http-equiv="Content-Type"/><meta content="width=device-width" name="viewport"/><!--[if !mso]><!--><meta content="IE=edge" http-equiv="X-UA-Compatible"/><!--<![endif]--><title></title><!--[if !mso]><!--><!--<![endif]--><style type="text/css">body {margin: 0;padding: 0;}table,td,tr {vertical-align: top;border-collapse: collapse;}* {line-height: inherit;}a[x-apple-data-detectors=true] {color: inherit !important;text-decoration: none !important;}</style><style id="media-query" type="text/css">@media (max-width: 520px) {.block-grid,.col {min-width: 320px !important;max-width: 100% !important;display: block !important;}.block-grid {width: 100% !important;}.col {width: 100% !important;}.col>div {margin: 0 auto;}img.fullwidth,img.fullwidthOnMobile {max-width: 100% !important;}.no-stack .col {min-width: 0 !important;display: table-cell !important;}.no-stack.two-up .col {width: 50% !important;}.no-stack .col.num4 {width: 33% !important;}.no-stack .col.num8 {width: 66% !important;}.no-stack .col.num4 {width: 33% !important;}.no-stack .col.num3 {width: 25% !important;}.no-stack .col.num6 {width: 50% !important;}.no-stack .col.num9 {width: 75% !important;}.video-block {max-width: none !important;}.mobile_hide {min-height: 0px;max-height: 0px;max-width: 0px;display: none;overflow: hidden;font-size: 0px;}.desktop_hide {display: block !important;max-height: none !important;}}</style></head><body class="clean-body" style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; background-color: #FFFFFF;"><!--[if IE]><div class="ie-browser"><![endif]--><table bgcolor="#FFFFFF" cellpadding="0" cellspacing="0" class="nl-container" role="presentation" style="table-layout: fixed; vertical-align: top; min-width: 320px; Margin: 0 auto; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #FFFFFF; width: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td style="word-break: break-word; vertical-align: top;" valign="top"><!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="background-color:#FFFFFF"><![endif]--><div style="background-color:transparent;"><div class="block-grid" style="Margin: 0 auto; min-width: 320px; max-width: 500px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: transparent;"><div style="border-collapse: collapse;display: table;width: 100%;background-color:transparent;"><!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:transparent;"><tr><td align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:500px"><tr class="layout-full-width" style="background-color:transparent"><![endif]--><!--[if (mso)|(IE)]><td align="center" width="500" style="background-color:transparent;width:500px; border-top: 0px solid transparent; border-left: 0px solid transparent; border-bottom: 0px solid transparent; border-right: 0px solid transparent;" valign="top"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 0px; padding-left: 0px; padding-top:5px; padding-bottom:5px;"><![endif]--><div class="col num12" style="min-width: 320px; max-width: 500px; display: table-cell; vertical-align: top; width: 500px;"><div style="width:100% !important;"><!--[if (!mso)&(!IE)]><!--><div style="border-top:0px solid transparent; border-left:0px solid transparent; border-bottom:0px solid transparent; border-right:0px solid transparent; padding-top:5px; padding-bottom:5px; padding-right: 0px; padding-left: 0px;"><!--<![endif]--><!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]--><div style="color:#555555;font-family:Arial, Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:10px;padding-left:10px;"><div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
+	<p style="font-size: 14px; line-height: 24px; margin: 0;"><span style="font-size: 22px;">
+		Your page <strong><a href="' . $page_url . '" style="text-decoration:none;color:#202020">' . $page_title . '</a></strong> has new feedback!</span></p></div></div><!--[if mso]></td></tr></table><![endif]--><table border="0" cellpadding="0" cellspacing="0" class="divider" role="presentation" style="table-layout: fixed; vertical-align: top; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; min-width: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td class="divider_inner" style="word-break: break-word; vertical-align: top; min-width: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; padding-top: 10px; padding-right: 10px; 
+		padding-bottom: 20px; padding-left: 10px;" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" class="divider_content" role="presentation" style="table-layout: fixed; vertical-align: top; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-top: 1px solid #BBBBBB; width: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td style="word-break: break-word; vertical-align: top; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;" valign="top"><span></span></td></tr></tbody></table></td></tr></tbody></table>';
+
+	}
+
+function build_email_base(){
+	 return '<!--[if mso]></center></v:textbox></v:roundrect></td></tr></table><![endif]--></div><!--[if (!mso)&(!IE)]><!--></div><!--<![endif]--></div></div><!--[if (mso)|(IE)]></td></tr></table><![endif]--><!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]--></div></div></div><!--[if (mso)|(IE)]></td></tr></table><![endif]--></td></tr></tbody></table><!--[if (IE)]></div><![endif]--></body></html>';
+	
 }
 
 
 /* EMAIL THE REPORT
  ----------------------------- */
-add_action( 'wp_ajax_siteWideMessage', 'wpse_sendmail' );
-add_action( 'wp_ajax_nopriv_siteWideMessage', 'wpse_sendmail' );
-
-function wpse_sendmail()
-{
-	$report = $_POST['report'];
-	$title = $_POST['title'];
-	$title_url = $_POST['title_url'];
+function send_email($report){
 
 	$options = get_option( 'speakAbout_settings' );
 	$reportEmail = $options['speakAbout_report_email'];
 	$reportTitle = $options['speakAbout_report_title'];
 	
-	$emailHead = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:v="urn:schemas-microsoft-com:vml"><head><!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]--><meta content="text/html; charset=utf-8" http-equiv="Content-Type"/><meta content="width=device-width" name="viewport"/><!--[if !mso]><!--><meta content="IE=edge" http-equiv="X-UA-Compatible"/><!--<![endif]--><title></title><!--[if !mso]><!--><!--<![endif]--><style type="text/css">body {margin: 0;padding: 0;}table,td,tr {vertical-align: top;border-collapse: collapse;}* {line-height: inherit;}a[x-apple-data-detectors=true] {color: inherit !important;text-decoration: none !important;}</style><style id="media-query" type="text/css">@media (max-width: 520px) {.block-grid,.col {min-width: 320px !important;max-width: 100% !important;display: block !important;}.block-grid {width: 100% !important;}.col {width: 100% !important;}.col>div {margin: 0 auto;}img.fullwidth,img.fullwidthOnMobile {max-width: 100% !important;}.no-stack .col {min-width: 0 !important;display: table-cell !important;}.no-stack.two-up .col {width: 50% !important;}.no-stack .col.num4 {width: 33% !important;}.no-stack .col.num8 {width: 66% !important;}.no-stack .col.num4 {width: 33% !important;}.no-stack .col.num3 {width: 25% !important;}.no-stack .col.num6 {width: 50% !important;}.no-stack .col.num9 {width: 75% !important;}.video-block {max-width: none !important;}.mobile_hide {min-height: 0px;max-height: 0px;max-width: 0px;display: none;overflow: hidden;font-size: 0px;}.desktop_hide {display: block !important;max-height: none !important;}}</style></head><body class="clean-body" style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; background-color: #FFFFFF;"><!--[if IE]><div class="ie-browser"><![endif]--><table bgcolor="#FFFFFF" cellpadding="0" cellspacing="0" class="nl-container" role="presentation" style="table-layout: fixed; vertical-align: top; min-width: 320px; Margin: 0 auto; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #FFFFFF; width: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td style="word-break: break-word; vertical-align: top;" valign="top"><!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="background-color:#FFFFFF"><![endif]--><div style="background-color:transparent;"><div class="block-grid" style="Margin: 0 auto; min-width: 320px; max-width: 500px; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; background-color: transparent;"><div style="border-collapse: collapse;display: table;width: 100%;background-color:transparent;"><!--[if (mso)|(IE)]><table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:transparent;"><tr><td align="center"><table cellpadding="0" cellspacing="0" border="0" style="width:500px"><tr class="layout-full-width" style="background-color:transparent"><![endif]--><!--[if (mso)|(IE)]><td align="center" width="500" style="background-color:transparent;width:500px; border-top: 0px solid transparent; border-left: 0px solid transparent; border-bottom: 0px solid transparent; border-right: 0px solid transparent;" valign="top"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 0px; padding-left: 0px; padding-top:5px; padding-bottom:5px;"><![endif]--><div class="col num12" style="min-width: 320px; max-width: 500px; display: table-cell; vertical-align: top; width: 500px;"><div style="width:100% !important;"><!--[if (!mso)&(!IE)]><!--><div style="border-top:0px solid transparent; border-left:0px solid transparent; border-bottom:0px solid transparent; border-right:0px solid transparent; padding-top:5px; padding-bottom:5px; padding-right: 0px; padding-left: 0px;"><!--<![endif]--><!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]--><div style="color:#555555;font-family:Arial, Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:10px;padding-left:10px;"><div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
-	<p style="font-size: 14px; line-height: 24px; margin: 0;"><span style="font-size: 22px;">
-		Your page <strong><a href="' . $title_url . '" style="text-decoration:none;color:#202020">' . $title . '</a></strong> has new feedback!</span></p></div></div><!--[if mso]></td></tr></table><![endif]--><table border="0" cellpadding="0" cellspacing="0" class="divider" role="presentation" style="table-layout: fixed; vertical-align: top; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; min-width: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td class="divider_inner" style="word-break: break-word; vertical-align: top; min-width: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; padding-top: 10px; padding-right: 10px; 
-		padding-bottom: 20px; padding-left: 10px;" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" class="divider_content" role="presentation" style="table-layout: fixed; vertical-align: top; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-top: 1px solid #BBBBBB; width: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td style="word-break: break-word; vertical-align: top; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;" valign="top"><span></span></td></tr></tbody></table></td></tr></tbody></table>';
-	$emailBase = '<!--[if mso]></center></v:textbox></v:roundrect></td></tr></table><![endif]--></div><!--[if (!mso)&(!IE)]><!--></div><!--<![endif]--></div></div><!--[if (mso)|(IE)]></td></tr></table><![endif]--><!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]--></div></div></div><!--[if (mso)|(IE)]></td></tr></table><![endif]--></td></tr></tbody></table><!--[if (IE)]></div><![endif]--></body></html>';
 	$message = stripslashes($report);
-	$message = $emailHead . $message . $emailBase; 
-
 
 	$to = $reportEmail;
 
@@ -184,8 +268,6 @@ function wpse_sendmail()
 	$headers = array('Content-Type: text/html; charset=UTF-8');
 	wp_mail( $to, $subject, $message, $headers);
 
-	echo "test response";
-
     die();
 }
 
@@ -195,19 +277,20 @@ function wpse_sendmail()
 add_action( 'admin_menu', 'speakabout_add_admin_menu' );
 add_action( 'admin_init', 'speakabout_settings_init' );
 
-function my_plugin_scripts($hook) {
+function speakabout_plugin_scripts($hook) {
     if ( 'settings_page_speakabout_settings' != $hook ) {
         return;
     }
 	wp_enqueue_style( 'speakaboutsettings', plugins_url('speak-about-settings.css', __FILE__));
 	wp_enqueue_script('speakaboutsettings_js', plugin_dir_url(__FILE__) . 'speak-about-settings.js', array('jquery'));
 }
-add_action( 'admin_enqueue_scripts', 'my_plugin_scripts' );
+add_action( 'admin_enqueue_scripts', 'speakabout_plugin_scripts' ); 
 
 
 function speakabout_add_admin_menu() {
 	add_options_page( 'SpeakAbout Options', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page' );
 }
+
 
 function speakabout_settings_init(  ) {
 	register_setting( 'saPlugin', 'speakAbout_settings' );
@@ -293,8 +376,6 @@ function speakAbout_highlight_color_render(  ) {
     <?php
 }
 
-
-
 function speakAbout_email_section_callback(  ) {
     // echo __( 'Change your email settings', 'wordpress' );
 }
@@ -308,7 +389,6 @@ function speakabout_options_page() {
 	}
 	?>
     <form action='options.php' method='post'>
-
         <h1>SpeakAbout Settings</h1>
 		<br>
         <?php
@@ -316,15 +396,9 @@ function speakabout_options_page() {
         do_settings_sections( 'saPlugin' );
         submit_button();
         ?>
-
     </form>
     <?php
 }
-
-?>
-
-
-<?php
 
 function highlightColorToJS(){
 	//TODO only let this run on pages that need it. This will stop it from outputting unexpected characters upon plugin installation
@@ -352,5 +426,26 @@ function highlightColorToJS(){
 	<?php
 
 }
-highlightColorToJS();
+if ( ! is_admin() ) {
+	highlightColorToJS();
+}
+
+
+/* 
+still outputting 338 characters after removing the highlight problem. Down from 785
+what I know... 
+1) highlightColorToJS() accounted for 447 unexpected characters 
+2) There's still 338 left.
+3) These comments do not affect it.
+4) HTML seems to do it. 
+5) speakabout_install() accounted for 336 unexpected characters - I was trying to get something that didn't exist. 
+6) something within the options panel accounts for the last 2 characters
+7) an unnecessary <?php ?> caused the last two
+
+Strategy : 
+comment out portions of code to find problematic piece. 
+
+*/
+
+
 ?>
