@@ -40,7 +40,6 @@ function thirty_second_interval( $schedules ) {
     return $schedules;
 }
 
-
 add_action( 'speakabout_cron_hook', 'speakabout_cron_exec' );
 
 if ( ! wp_next_scheduled( 'speakabout_cron_hook' ) ) {
@@ -51,8 +50,7 @@ function speakabout_cron_exec(){
 	build_feedback_emails();
 }
 
-// $timestamp = wp_next_scheduled( 'speakabout_cron_hook' );
-// wp_unschedule_event( $timestamp, 'speakabout_cron_hook' );
+
 
 /* BUILD THE DATABASE
  ----------------------------- */
@@ -105,12 +103,6 @@ register_activation_hook( __FILE__, 'speakabout_install' );
 /* SEND TO DATABASE
  ----------------------------- */
 // remove all the extra global wpdb's, ya? 
-/*
-0. Get from JS
-1. identify if this is updating a comment or adding a new one ( get from JS )
-a) update the record
-b) add a new record
-*/ 
 
 add_action( 'wp_ajax_siteWideMessage', 'speakabout_store_feedback' );
 add_action( 'wp_ajax_nopriv_siteWideMessage', 'speakabout_store_feedback' );
@@ -189,9 +181,7 @@ function build_feedback_emails(){
    }
 }
 
-
-
-   function set_email_bool_to_sent($commenter_id){
+function set_email_bool_to_sent($commenter_id){
 
 	global $wpdb;
 	$table_name = $wpdb->prefix . 'speakabout';
@@ -208,9 +198,9 @@ function build_feedback_emails(){
 		), 
 		array( '%s' ) 
 	);
-   }
+}
 
-   function htmlify_feedback($highlight, $comment){
+function htmlify_feedback($highlight, $comment){
 	return '  <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
     <div style="color:#555555;font-family:Arial, Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
     	<div style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
@@ -236,7 +226,7 @@ function build_email_header($page_url, $page_title){
 		Your page <strong><a href="' . $page_url . '" style="text-decoration:none;color:#202020">' . $page_title . '</a></strong> has new feedback!</span></p></div></div><!--[if mso]></td></tr></table><![endif]--><table border="0" cellpadding="0" cellspacing="0" class="divider" role="presentation" style="table-layout: fixed; vertical-align: top; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; min-width: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td class="divider_inner" style="word-break: break-word; vertical-align: top; min-width: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; padding-top: 10px; padding-right: 10px; 
 		padding-bottom: 20px; padding-left: 10px;" valign="top"><table align="center" border="0" cellpadding="0" cellspacing="0" class="divider_content" role="presentation" style="table-layout: fixed; vertical-align: top; border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-top: 1px solid #BBBBBB; width: 100%;" valign="top" width="100%"><tbody><tr style="vertical-align: top;" valign="top"><td style="word-break: break-word; vertical-align: top; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;" valign="top"><span></span></td></tr></tbody></table></td></tr></tbody></table>';
 
-	}
+}
 
 function build_email_base(){
 	 return '<!--[if mso]></center></v:textbox></v:roundrect></td></tr></table><![endif]--></div><!--[if (!mso)&(!IE)]><!--></div><!--<![endif]--></div></div><!--[if (mso)|(IE)]></td></tr></table><![endif]--><!--[if (mso)|(IE)]></td></tr></table></td></tr></table><![endif]--></div></div></div><!--[if (mso)|(IE)]></td></tr></table><![endif]--></td></tr></tbody></table><!--[if (IE)]></div><![endif]--></body></html>';
@@ -288,7 +278,6 @@ function speakabout_add_admin_menu() {
 	add_options_page( 'SpeakAbout Options', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page' );
 }
 
-
 function speakabout_settings_init(  ) {
 	register_setting( 'saPlugin', 'speakAbout_settings' );
     add_settings_section(
@@ -325,12 +314,14 @@ function speakabout_settings_init(  ) {
         'saPlugin_section_highlighter'
     );
 }
+
 function speakAbout_report_title_render(  ) {
     $options = get_option( 'speakAbout_settings' );
     ?>
     <input type='text' placeholder="New message from SpeakAbout!" style="width: 250px" name='speakAbout_settings[speakAbout_report_title]' value='<?php echo $options['speakAbout_report_title']; ?>'>
     <?php
 }
+
 function speakAbout_report_email_render(  ) {
     $options = get_option( 'speakAbout_settings' );
     ?>
@@ -409,18 +400,18 @@ function highlightColorToJS(){
 	return '<script> var highlightColor = "' . $color . '"</script>'; 
 }
 
-
-
-
 function add_speakabout_to_page($content) {
 
 	//TODO make sure all of speakabout, not just the highlighter, only runs on pages, and only ** within **  the post
 	if( is_singular() && is_main_query() ) {
-		$speakabout_content = highlightColorToJS();
-		$content .= $speakabout_content;	
+		$speakabout_highlighterinfo = highlightColorToJS();
+		$speakabout_open = "<div id='speakaboutWrapper'>";
+		$speakabout_close = "</div>";
+		$content = $speakabout_open . $speakabout_highlighterinfo . $content . $speakabout_close;	
 	}	
 	return $content;
 }
+
 add_filter('the_content', 'add_speakabout_to_page');
 
 

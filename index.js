@@ -77,6 +77,8 @@ let state = {
 s = state;
 
 function setupSpeakAbout(){
+  setupMobile();
+
   document.addEventListener('mouseup', () => {
     let highlight = document.getSelection();
     if (isNotJustAClick(highlight)) {
@@ -119,20 +121,29 @@ function updatePageSelectionColor(){
 //-------------------------------------------
 // Building a new item, which can be composed of multiple <mark> tags but one itemId to unify them 
 function buildNewItem(){
+  if (!highlightIsWithinWrapper()) return;
   highlighter.highlightSelection("h_item", { exclusive: false });
   let newMarkTags = findNewMarkTags();
   let itemId = null;
   newMarkTags.forEach(tag => {
     if (itemId === null){
-      //on multi-tag highlights the last getIdFromHighlight fails for unknown reasons
-      //this if statement is a simple way of just avoiding that altogether. Only get it the first time, then store.
-      itemId = getIdFromHighlight(tag)
+      itemId = getIdFromHighlight(tag) //on multi-tag highlights the last getIdFromHighlight fails for unknown reasons this if statement is a simple way of just avoiding that altogether. Only get it the first time, then store.
     } 
     addIdToTag(tag, itemId);
     addCommentComponent(tag, itemId);
     addItemToState(tag, itemId);
   });
   removeExtraCommentComponents(itemId);
+}
+
+function highlightIsWithinWrapper(){
+  let highlightEl = window.getSelection().anchorNode.parentNode;
+  if ($(highlightEl).closest("#speakaboutWrapper").length === 0){
+    return false;
+  }
+  else {
+    return true;
+  }
 }
 
 function getHighlightEl(tag){
@@ -260,11 +271,6 @@ function removeExtraCommentComponents(itemId){
 
 // MOBILE
 //-------------------------------------------
-/* 
-1. Register a highlight
-2. Pop up the 'write a comment' box
-3. Both close and submit should submit the comment unless it is empty. (maybe?)
-*/
 
 function setupMobile(){
   if (isMobile()){
@@ -281,6 +287,7 @@ function setupMobile(){
   }
   // listen for highlights, then call showMobileComment
 }
+
 function isMobile(){
   return 'ontouchstart' in window;
 }
@@ -311,12 +318,11 @@ function mobileComment(){
 
 }
 
- function hideMobileCommentBtn(){
-    document.querySelector("#sa_commentBtn").remove();
- }
+function hideMobileCommentBtn(){
+  document.querySelector("#sa_commentBtn").remove();
+}
 
 
-setupMobile();
 
 
 
@@ -440,10 +446,6 @@ function createUserId() {
   localStorage.setItem('speakabout_userId', id);
   return id;
 }
-
-
-
-
 
 function sendFeedbackToDB(feedback){
 
