@@ -252,10 +252,13 @@ function getIdFromHighlight(tag) {
 }
 
 function removeExtraCommentComponents(itemId){
+  
   //check number of tags for the Id. If multiple tags, remove all comments but the last 
-  let numberOfTags = state.items.map( item => {
-    if (item.id === itemId) return item.numOfTags;
+  let numberOfTags;
+  state.items.map( item => {
+    if (item.id === itemId) numberOfTags = item.numOfTags;
   })
+  
   let commentComponentList; 
   if (numberOfTags > 1){
     commentComponentList = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_comment`);

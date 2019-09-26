@@ -402,80 +402,25 @@ function highlightColorToJS(){
 
 function add_speakabout_to_page($content) {
 
-	//TODO make sure all of speakabout, not just the highlighter, only runs on pages, and only ** within **  the post
-	if( is_singular() && is_main_query() ) {
+	$build = false; 
+
+	if( is_singular() && is_main_query() ) $build = true;
+	if(is_page()) $build = true;
+	if(is_front_page()) $build = true;
+	if(is_home()) $build = true;
+	// if(is_archive() && in_array('archive', $types)) $allow = true;
+	// if(is_front_page() && in_array('home', $types)) $allow = true;
+
+
+	if ($build){
 		$speakabout_highlighterinfo = highlightColorToJS();
 		$speakabout_open = "<div id='speakaboutWrapper'>";
 		$speakabout_close = "</div>";
 		$content = $speakabout_open . $speakabout_highlighterinfo . $content . $speakabout_close;	
-	}	
+	}
 	return $content;
 }
 
 add_filter('the_content', 'add_speakabout_to_page');
-
-
-// add_filter( 'the_content', 'add_speakabout_to_page', 10 );
-// function add_speakabout_to_page( $content ) {
-
-// 	$allowed = array('page'); //hardcode for now 
-
-// 	if ( ! is_admin() ) {
-// 		if (is_page() && in_array('page', $allowed)){
-			
-// 			highlightColorToJS();
-// 			return  $content; 
-// 		}
-// 	}
-// }
- 
-
-
-
-// function add_speakabout_to_page( $content ) {
- 
-//     // Check if we're inside the main loop in a single post page.
-//     if ( is_single() && in_the_loop() && is_main_query() ) {
-//         return $content . esc_html__("I'm filtering the content inside the main loop", "my-textdomain");
-//     }
- 
-//     return $content;
-// }
-
-
-// what parts of the site to allow highlighter functionality
-	// $types = !empty($options['highlighter_enable']) ? $options['highlighter_enable'] : array();
-	// $types_cpts = !empty($options['highlighter_cpts']) ? $options['highlighter_cpts'] : array();
-	// if(isset($options['highlighter_cpts_manual'])) {
-	// 	$val = preg_replace('/\s+/', '', $options['highlighter_cpts_manual']);
-	// 	if(strpos($val, ',') !== false) {
-	// 		$types_cpts_manual = explode(',', $val);
-	// 	} else {
-	// 		$types_cpts_manual = array($val);
-	// 	}
-	// }
-	// $types = array_merge($types, (array)$types_cpts, $types_cpts_manual);
-
-	// if(is_page() && in_array('page', $types)) $allow = true;
-	// if(is_archive() && in_array('archive', $types)) $allow = true;
-	// if(is_front_page() && in_array('home', $types)) $allow = true;
-	// if(is_home() && in_array('blog', $types)) $allow = true;
-	// if(is_singular(get_post_type()) && in_array(get_post_type(), $types)) $allow = true;
-
-	// // check to see if this post is individually or categorically disabled
-	// if(isset($options['category_disable'])) {
-	// 	if(!empty($options['category_disable'])) {
-	// 		if(has_category($options['category_disable'], $postid)) {
-	// 			$allow = false;
-	// 		}
-	// 	}
-	// }
-
-
-/* 
-
-
-*/
-
 
 ?>
