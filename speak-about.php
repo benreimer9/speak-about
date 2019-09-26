@@ -274,6 +274,7 @@ add_action( 'admin_menu', 'speakabout_add_admin_menu' );
 add_action( 'admin_init', 'speakabout_settings_init' );
 
 function speakabout_plugin_scripts($hook) {
+	//TODO set this up properly, right now it runs on every page. 
     if ( 'settings_page_speakabout_settings' != $hook ) {
         return;
     }

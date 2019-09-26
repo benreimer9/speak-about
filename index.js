@@ -57,7 +57,7 @@ window.onload = function () {
 
 
 
-
+// SETUP 
 //-------------------------------------------
 
 let state = {
@@ -74,25 +74,25 @@ let state = {
     */
   ],
 };
-let report = "<p>This report is empty! Please let speakaboutbeta@gmail.com know, you shouldn't be getting bothered with empty reports.</p>";
 s = state;
 
 function setupSpeakAbout(){
   document.addEventListener('mouseup', () => {
     let highlight = document.getSelection();
     if (isNotJustAClick(highlight)) {
-      buildNewItem();
+        if (!isMobile()){
+            buildNewItem();
+        } 
     }
   });
-
   updatePageSelectionColor();
 }
 
 function isNotJustAClick(highlight) {
   return (highlight.anchorOffset !== highlight.focusOffset);
 }
-function updatePageSelectionColor(){
-  
+
+function updatePageSelectionColor(){  
   if (typeof highlightColor !== 'undefined') {
     let style = document.createElement('style');
     style.innerHTML = `
@@ -113,6 +113,9 @@ function updatePageSelectionColor(){
   }
 }
 
+
+
+// NEW ITEM 
 //-------------------------------------------
 // Building a new item, which can be composed of multiple <mark> tags but one itemId to unify them 
 function buildNewItem(){
@@ -130,7 +133,6 @@ function buildNewItem(){
     addItemToState(tag, itemId);
   });
   removeExtraCommentComponents(itemId);
-  updateReport();
 }
 
 function getHighlightEl(tag){
@@ -169,10 +171,8 @@ function addItemToState(tag, itemId){
   }
 }
 
-
 function getHighlightTextContext(tag, itemId) {
-
-  // TODO clean up the DOM on browser inspectors by making one shadow parent, so all shadow elements are within it. 
+  //make a separate hidden copy of the highlight and text I can manipulate to get the proper format. Remove once complete.
   let elem = getHighlightEl(tag);
   let getRange = elem.getRange()
   let parentElement = getRange.commonAncestorContainer.innerHTML;
@@ -180,7 +180,6 @@ function getHighlightTextContext(tag, itemId) {
   document.querySelector("body").insertAdjacentHTML("beforeend", shadowElement);
   document.querySelector('#SA_SHADOW').innerHTML = parentElement;
 
-  
   //remove comments from the shadow version
   let shadowComments = document.querySelectorAll(`#SA_SHADOW .h_comment`);
   shadowComments.forEach(el => {
@@ -217,13 +216,12 @@ function getHighlightTextContext(tag, itemId) {
   let shortenedPlainTextShadow = plainTextShadow.slice(sliceStartPoint, sliceEndPoint);
   let reportHTML = `<p>${startingDots}${shortenedPlainTextShadow}${endingDots}</p>`;
 
+  document.querySelector('#SA_SHADOW').remove();
   return reportHTML;
 
-  
   // TODO further sanitizing for code 
-  // hypothetically an author could write code in their text that stays as text until
-  // I send it out in the email, then gets converted to html / css / js. 
-  
+  // hypothetically a user could write code in their comment that stays as a string until
+  // I send it out in the email, then gets converted to html / css 
 }
 
 function itemIsAlreadyInState(id){
@@ -244,13 +242,10 @@ function getIdFromHighlight(tag) {
 
 function removeExtraCommentComponents(itemId){
   //check number of tags for the Id. If multiple tags, remove all comments but the last 
-
   let numberOfTags = state.items.map( item => {
     if (item.id === itemId) return item.numOfTags;
   })
-
   let commentComponentList; 
-
   if (numberOfTags > 1){
     commentComponentList = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_comment`);
     for (i = 0; i < numberOfTags; i++) {
@@ -261,8 +256,72 @@ function removeExtraCommentComponents(itemId){
   }
 }
 
+
+
+// MOBILE
 //-------------------------------------------
-// Comments
+/* 
+1. Register a highlight
+2. Pop up the 'write a comment' box
+3. Both close and submit should submit the comment unless it is empty. (maybe?)
+*/
+
+function setupMobile(){
+  if (isMobile()){
+    window.addEventListener("touchend", function(){
+      if (window.getSelection().toString()){
+        showMobileCommentBtn();
+      }
+    })
+    window.addEventListener("touchstart", function () {
+      if (!window.getSelection().toString()) {
+        hideMobileCommentBtn();
+      }
+    })
+  }
+  // listen for highlights, then call showMobileComment
+}
+function isMobile(){
+  return 'ontouchstart' in window;
+}
+
+function showMobileCommentBtn(){
+
+  var commentButtonHTML = "<div id='sa_commentBtn'>Write a comment</div>";
+  var commentButton = document.querySelector("#sa_commentBtn");
+  var body = document.querySelector("body");
+
+  if (commentButton == null){
+    body.insertAdjacentHTML('beforeend', commentButtonHTML);
+  }
+
+  document.querySelector("#sa_commentBtn").classList.add('sa_visible');
+
+  document.querySelector("#sa_commentBtn").addEventListener("touchstart", function(){
+    mobileComment();
+  });
+  //Show a "write comment" button 
+  //If they click the button, then call buildNewItem()
+}
+
+function mobileComment(){
+    highlighter.highlightSelection("h_item");
+    buildNewItem();
+
+
+}
+
+ function hideMobileCommentBtn(){
+    document.querySelector("#sa_commentBtn").remove();
+ }
+
+
+setupMobile();
+
+
+
+// COMMENTS
+//-------------------------------------------
 
 const commentHTML =
   "<form class='h_comment'>" +
@@ -417,33 +476,6 @@ function sendFeedbackToDB(feedback){
 
   //If I'd like the ability to see highlights in context on an actual page it is possible
   // use rangy serialize https://github.com/timdown/rangy/wiki/Highlighter-Module 
-  function updateReport() {
-      let buildReport = "";
-
-      state.items.forEach(item => {
-        buildReport += `
-      <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 10px; padding-bottom: 10px; font-family: Arial, sans-serif"><![endif]-->
-    <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:10px;padding-right:10px;padding-bottom:0px;padding-left:10px;">
-    	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #555555;">
-          ${item.highlightTextContext}
-        </div>
-    </div>
-    <!--[if mso]></td></tr></table><![endif]-->
-    <!--[if mso]><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right: 10px; padding-left: 10px; padding-top: 0px; padding-bottom: 0px; font-family: Arial, sans-serif"><![endif]-->
-    <div style="color:#555555;font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif;line-height:120%;padding-top:0px;padding-right:10px;padding-bottom:20px;padding-left:10px;">
-    	<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 12px; line-height: 14px; color: #555555;">
-    		<p style="font-size: 14px; line-height: 24px; margin: 0;font-size:18px; color:#333; background-color:#f0f0f0;padding:10px;margin:2px 0px;">
-    			<span style="font-size: 18px;">${item.comment}</span>
-    		</p>
-    	</div>
-    </div>
-    `
-
-      })
-
-      report = buildReport;
-  }
-
 
 
 
