@@ -79,3 +79,8 @@
 .switch-field input:checked+label[for="radio-custom"] input#colorInput {
     display: block;
 }
+
+
+#permissions-field label{
+    margin-right: 15px;
+}

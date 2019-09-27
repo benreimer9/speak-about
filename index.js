@@ -95,6 +95,7 @@ function isNotJustAClick(highlight) {
 }
 
 function updatePageSelectionColor(){  
+  //TODO add defaults if nothing from db
   if (typeof highlightColor !== 'undefined') {
     let style = document.createElement('style');
     style.innerHTML = `

@@ -301,6 +301,19 @@ function speakabout_settings_init(  ) {
         'saPlugin_section_email'
 	);
 	add_settings_section(
+        'saPlugin_section_perm',
+        __( 'Permissions', 'wordpress' ),
+        'speakAbout_perm_section_callback',
+        'saPlugin'
+	);
+	add_settings_field(
+        'speakAbout_perm',
+        __( 'Run SpeakAbout on:', 'wordpress' ),
+        'speakAbout_perm_render',
+        'saPlugin',
+        'saPlugin_section_perm'
+    );
+	add_settings_section(
         'saPlugin_section_highlighter',
         __( 'Highlighter', 'wordpress' ),
         'speakAbout_highlighter_section_callback',
@@ -312,7 +325,15 @@ function speakabout_settings_init(  ) {
         'speakAbout_highlight_color_render',
         'saPlugin',
         'saPlugin_section_highlighter'
-    );
+	);	
+}
+
+
+function speakAbout_report_page_render( ){
+	$options = get_option( 'speakAbout_settings' );
+    ?>
+    <input type='text' placeholder="New" style="width: 250px" name='speakAbout_settings[speakAbout_page]' value='<?php echo $options['speakAbout_page']; ?>'>
+    <?php
 }
 
 function speakAbout_report_title_render(  ) {
@@ -364,11 +385,44 @@ function speakAbout_highlight_color_render(  ) {
     <?php
 }
 
+function speakAbout_perm_render( ) {
+
+	$options = get_option( 'speakAbout_settings', [] );
+	$speakabout_permissions = isset( $options['speakAbout_perm'] )
+	? (array) $options['speakAbout_perm'] : [];
+		
+	$stateOfChecks = "default";
+	$numOfChecks = count($speakabout_permissions);
+	if ($numOfChecks > 0 || $stateOfChecks == "notDefault"){
+		$stateOfChecks = "notDefault";
+	}
+
+	?>
+	<div id="permissions-field">
+		<input type='checkbox' style="display:none" name='speakAbout_settings[speakAbout_perm][]' checked value="<?php echo $stateOfChecks ?>">
+		<input type='checkbox' name='speakAbout_settings[speakAbout_perm][]' <?php checked( in_array( 'pages', $speakabout_permissions )  || $stateOfChecks == 'default'); ?> value='pages'>
+        <label>Pages</label>
+		<input type='checkbox' name='speakAbout_settings[speakAbout_perm][]' <?php checked( in_array( 'posts', $speakabout_permissions )  || $stateOfChecks == 'default'); ?> value='posts'>
+        <label>Posts</label>
+		<input type='checkbox' name='speakAbout_settings[speakAbout_perm][]' <?php checked( in_array( 'archive', $speakabout_permissions ) || $stateOfChecks == 'default'); ?> value='archive'>
+        <label>Archive</label>
+		<input type='checkbox' name='speakAbout_settings[speakAbout_perm][]' <?php checked( in_array( 'home', $speakabout_permissions ) ); ?> value='home'>
+        <label>Home</label>
+		<input type='checkbox' name='speakAbout_settings[speakAbout_perm][]' <?php checked( in_array( 'front_page', $speakabout_permissions ) ); ?> value='front_page'>
+        <label>Front Page</label>
+	</div>
+	<?php
+
+}
+
 function speakAbout_email_section_callback(  ) {
     // echo __( 'Change your email settings', 'wordpress' );
 }
 function speakAbout_highlighter_section_callback(  ) {
     // echo __( 'Change your highlighter settings', 'wordpress' );
+}
+function speakAbout_perm_section_callback(  ) {
+   // echo __( 'Choose which pages to run SpeakAbout on', 'wordpress' );
 }
 
 function speakabout_options_page() {
@@ -402,14 +456,16 @@ function highlightColorToJS(){
 
 function add_speakabout_to_page($content) {
 
+	$options = get_option( 'speakAbout_settings' );
+	$permissions = $options['speakAbout_perm'];
 	$build = false; 
 
-	if( is_singular() && is_main_query() ) $build = true;
-	if(is_page()) $build = true;
-	if(is_front_page()) $build = true;
-	if(is_home()) $build = true;
-	// if(is_archive() && in_array('archive', $types)) $allow = true;
-	// if(is_front_page() && in_array('home', $types)) $allow = true;
+
+	if( is_singular() && is_main_query() && in_array('posts', $permissions)) $build = true;
+	if( is_page() && in_array('pages', $permissions)) $build = true;
+	if( is_front_page() && in_array('front_page', $permissions)) $build = true;
+	if( is_home() && in_array('home', $permissions)) $build = true;
+	if( is_archive() && in_array('archive', $permissions)) $build = true;
 
 
 	if ($build){
