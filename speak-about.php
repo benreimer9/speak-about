@@ -265,7 +265,7 @@ add_action( 'admin_init', 'speakabout_settings_init' );
 
 function speakabout_plugin_scripts($hook) {
 	//TODO set this up properly, right now it runs on every page. 
-    if ( 'settings_page_speakabout_settings' != $hook ) {
+    if ( 'toplevel_page_speakabout_settings' != $hook ) {
         return;
     }
 	wp_enqueue_style( 'speakaboutsettings', plugins_url('speak-about-settings.css', __FILE__));
@@ -275,7 +275,9 @@ add_action( 'admin_enqueue_scripts', 'speakabout_plugin_scripts' );
 
 
 function speakabout_add_admin_menu() {
-	add_options_page( 'SpeakAbout Options', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page' );
+	//add_options_page( 'SpeakAbout', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page');
+
+	add_menu_page( 'SpeakAbout', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page', plugin_dir_url(__FILE__) . 'assets/dash-icon.png', 65);
 }
 
 function speakabout_settings_init(  ) {
