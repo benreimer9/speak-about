@@ -1,7 +1,7 @@
-.h_item {
+mark.h_item {
     position:relative;
 }
-.h_comment {
+mark.h_item .h_comment {
     position: absolute;
     right:0;
     top:-45px;
@@ -11,10 +11,10 @@
     padding: 0px;
     z-index: 2px;
 }
-.h_comment input[type="text"] {
+mark.h_item .h_comment input[type="text"] {
     border:none;
 }
-.h_close {
+mark.h_item .h_comment .h_close {
     border: 3px solid #aaa;
     cursor: pointer;
     position: absolute;
@@ -31,14 +31,14 @@
     align-items:center;
     transform: all .2s ease;
 }
-.hidden {
+mark.h_item .h_comment.hidden {
     height: 0; 
     width: 0;
 }
-.hidden input {
+mark.h_item .h_comment.hidden input {
     display:none;
 }
-.hidden .h_close {
+mark.h_item .h_comment.hidden .h_close {
     background-color:#FFA8A8;
     top: 36px;
 }

@@ -5,7 +5,7 @@
  */
 /*
 Plugin Name: SpeakAbout
-Plugin URI: https://speakabout.blog/
+Plugin URI: https://speakabout.io/
 Description: Connect with your blog readers through an interactive highlighting tool.
 Author: Ben Reimer
 Version: 1.0.0
@@ -258,6 +258,7 @@ function send_email($report){
     die();
 }
 
+
 /* OPTIONS ADMIN 
  ----------------------------- */
 add_action( 'admin_menu', 'speakabout_add_admin_menu' );
@@ -443,6 +444,35 @@ function speakabout_options_page() {
     </form>
     <?php
 }
+
+//NOTIFICATION UPON ACTIVATION
+// https://stackoverflow.com/questions/38233751/show-message-after-activating-wordpress-plugin
+
+register_activation_hook( __FILE__, 'activation_notice_hook' );
+
+function activation_notice_hook() {
+    set_transient( 'admin_notice', true, 5 );
+}
+
+add_action( 'admin_notices', 'admin_activation_notice' );
+
+function admin_activation_notice(){
+
+    /* Check transient, if available display notice */
+    if( get_transient( 'admin_notice' ) ){
+        ?>
+        <div class="notice notice-warning is-dismissible">
+            <p><strong>Please add an email address</strong> under SpeakAbout settings to send reports.</p>
+        </div>
+        <?php
+        /* Delete transient, only display this notice once. */
+        delete_transient( 'admin_notice' );
+    }
+}
+
+
+
+//OTHER 
 
 function highlightColorToJS(){
 	$options = get_option( 'speakAbout_settings' );
