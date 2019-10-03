@@ -328,6 +328,12 @@ function speakabout_settings_init(  ) {
         'speakAbout_highlight_color_render',
         'saPlugin',
         'saPlugin_section_highlighter'
+	);
+	add_settings_section(
+        'saPlugin_section_bugreport',
+        __( 'Feedback', 'wordpress' ),
+        'speakAbout_bugreport_section_callback',
+        'saPlugin'
 	);	
 }
 
@@ -427,6 +433,9 @@ function speakAbout_highlighter_section_callback(  ) {
 function speakAbout_perm_section_callback(  ) {
    // echo __( 'Choose which pages to run SpeakAbout on', 'wordpress' );
 }
+function speakAbout_bugreport_section_callback(  ) {
+     echo __( "Suggestions, bugs, or general feedback? We would love to hear it at <a href='mailto:feedback@speakabout.io'> feedback@speakabout.io </a>", 'wordpress' );
+}
 
 function speakabout_options_page() {
 	if ( !current_user_can( 'manage_options' ) )  {
@@ -447,6 +456,7 @@ function speakabout_options_page() {
 
 //NOTIFICATION UPON ACTIVATION
 // https://stackoverflow.com/questions/38233751/show-message-after-activating-wordpress-plugin
+//TODO only show message if email address field is actually empty. 
 
 register_activation_hook( __FILE__, 'activation_notice_hook' );
 
