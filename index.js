@@ -6,7 +6,8 @@ Utilizes the Rangy library for range and selection, MIT License https://github.c
 https://github.com/timdown/rangy/wiki/
 
  -------------------------- */
- let s; 
+ var s; 
+ var z;
 (function ($) {
 $(document).ready(function () {
 
@@ -60,7 +61,7 @@ window.onload = function () {
 // SETUP 
 //-------------------------------------------
 
-let state = {
+var state = {
   items : [
     /* example item
       {
@@ -80,7 +81,7 @@ function setupSpeakAbout(){
   setupMobile();
 
   document.addEventListener('mouseup', () => {
-    let highlight = document.getSelection();
+    var highlight = document.getSelection();
     if (isNotJustAClick(highlight)) {
         if (!isMobile()){
             buildNewItem();
@@ -96,7 +97,7 @@ function isNotJustAClick(highlight) {
 
 function updatePageSelectionColor(){  
   if (typeof highlightColor !== 'undefined') {
-    let style = document.createElement('style');
+    var style = document.createElement('style');
     style.innerHTML = `
       #speakaboutWrapper mark.h_item {
         background-color: ${highlightColor};
@@ -123,8 +124,8 @@ function updatePageSelectionColor(){
 function buildNewItem(){
   if (!highlightIsWithinWrapper()) return;
   highlighter.highlightSelection("h_item", { exclusive: false });
-  let newMarkTags = findNewMarkTags();
-  let itemId = null;
+  var newMarkTags = findNewMarkTags();
+  var itemId = null;
   newMarkTags.forEach(tag => {
     if (itemId === null){
       itemId = getIdFromHighlight(tag) //on multi-tag highlights the last getIdFromHighlight fails for unknown reasons this if statement is a simple way of just avoiding that altogether. Only get it the first time, then store.
@@ -137,7 +138,7 @@ function buildNewItem(){
 }
 
 function highlightIsWithinWrapper(){
-  let highlightEl = window.getSelection().anchorNode.parentNode;
+  var highlightEl = window.getSelection().anchorNode.parentNode;
   if ($(highlightEl).closest("#speakaboutWrapper").length === 0){
     return false;
   }
@@ -152,8 +153,8 @@ function getHighlightEl(tag){
 
 function findNewMarkTags(){
   // new mark tags do not have h_id attributes 
-  let newMarktags = [];
-  let allMarkTags = document.querySelectorAll("mark");
+  var newMarktags = [];
+  var allMarkTags = document.querySelectorAll("mark");
   newMarktags = Array.prototype.slice
     .call(allMarkTags)
     .filter(tag => !tag.getAttribute('h_id'));
@@ -183,49 +184,49 @@ function addItemToState(tag, itemId){
 }
 
 function getHighlightTextContext(tag, itemId) {
-  //make a separate hidden copy of the highlight and text I can manipulate to get the proper format. Remove once complete.
-  let elem = getHighlightEl(tag);
-  let getRange = elem.getRange()
-  let parentElement = getRange.commonAncestorContainer.innerHTML;
-  let shadowElement = `<div id="SA_SHADOW" style="display:none"></div>`;
+  //make a separate hidden copy of the highlight and text I can manipulate to get the proper format. Remove once compvare.
+  var elem = getHighlightEl(tag);
+  var getRange = elem.getRange()
+  var parentElement = getRange.commonAncestorContainer.innerHTML;
+  var shadowElement = `<div id="SA_SHADOW" style="display:none"></div>`;
   document.querySelector("body").insertAdjacentHTML("beforeend", shadowElement);
   document.querySelector('#SA_SHADOW').innerHTML = parentElement;
 
   //remove comments from the shadow version
-  let shadowComments = document.querySelectorAll(`#SA_SHADOW .h_comment`);
+  var shadowComments = document.querySelectorAll(`#SA_SHADOW .h_comment`);
   shadowComments.forEach(el => {
     el.remove();
   });
 
   //reform the highlight with a span and inline CSS so the highlight appears in the email
-  let highlightItemsList = document.querySelectorAll(`#SA_SHADOW mark[h_id="${itemId}"]`);
-  let startHighlightStyling = `<span class="SA_HIGHLIGHT" style="line-height: 12px; font-size: 16px; margin: 0; padding:3px; background-color:#ffc2c2">`
-  let endHighlightStyling = `</span>`;
-  let lastHighlightTextLength; //this will be needed later
+  var highlightItemsList = document.querySelectorAll(`#SA_SHADOW mark[h_id="${itemId}"]`);
+  var startHighlightStyling = `<span class="SA_HIGHLIGHT" style="line-height: 12px; font-size: 16px; margin: 0; padding:3px; background-color:#ffc2c2">`
+  var endHighlightStyling = `</span>`;
+  var lastHighlightTextLength; //this will be needed later
   highlightItemsList.forEach(item => {
     item.innerText = startHighlightStyling + item.innerText + endHighlightStyling;
     lastHighlightTextLength = item.innerText.length; 
   })
 
-  let plainTextShadow = document.querySelector("#SA_SHADOW").innerText;
-  let firstHighlightPos = plainTextShadow.indexOf(`<span class="SA_HIGHLIGHT"`); //finds first highlight
-  let lastHighlightPos = plainTextShadow.lastIndexOf(`<span class="SA_HIGHLIGHT"`); //finds last highlight
-  let numOfExtraCharactersForContext = 150; 
-  let startingDots = "...";
-  let endingDots = "...";
+  var plainTextShadow = document.querySelector("#SA_SHADOW").innerText;
+  var firstHighlightPos = plainTextShadow.indexOf(`<span class="SA_HIGHLIGHT"`); //finds first highlight
+  var lastHighlightPos = plainTextShadow.lastIndexOf(`<span class="SA_HIGHLIGHT"`); //finds last highlight
+  var numOfExtraCharactersForContext = 150; 
+  var startingDots = "...";
+  var endingDots = "...";
 
-  let sliceStartPoint = firstHighlightPos - numOfExtraCharactersForContext;
+  var sliceStartPoint = firstHighlightPos - numOfExtraCharactersForContext;
   if (sliceStartPoint <= 0){
     sliceStartPoint = 0;
     startingDots = "";
   } 
-  let sliceEndPoint = lastHighlightPos + lastHighlightTextLength + numOfExtraCharactersForContext;
+  var sliceEndPoint = lastHighlightPos + lastHighlightTextLength + numOfExtraCharactersForContext;
   if (sliceEndPoint > plainTextShadow.length){
     sliceEndPoint = plainTextShadow.length;
     endingDots = "";
   } 
-  let shortenedPlainTextShadow = plainTextShadow.slice(sliceStartPoint, sliceEndPoint);
-  let reportHTML = `<p>${startingDots}${shortenedPlainTextShadow}${endingDots}</p>`;
+  var shortenedPlainTextShadow = plainTextShadow.slice(sliceStartPoint, sliceEndPoint);
+  var reportHTML = `<p>${startingDots}${shortenedPlainTextShadow}${endingDots}</p>`;
 
   document.querySelector('#SA_SHADOW').remove();
   return reportHTML;
@@ -236,7 +237,7 @@ function getHighlightTextContext(tag, itemId) {
 }
 
 function itemIsAlreadyInState(id){
-  let numOfTagsPerId = [];
+  var numOfTagsPerId = [];
   numOfTagsPerId = state.items.filter(item => {
     return item.id === id;
   })
@@ -254,12 +255,12 @@ function getIdFromHighlight(tag) {
 function removeExtraCommentComponents(itemId){
   
   //check number of tags for the Id. If multiple tags, remove all comments but the last 
-  let numberOfTags;
+  var numberOfTags;
   state.items.map( item => {
     if (item.id === itemId) numberOfTags = item.numOfTags;
   })
   
-  let commentComponentList; 
+  var commentComponentList; 
   if (numberOfTags > 1){
     commentComponentList = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_comment`);
     for (i = 0; i < numberOfTags; i++) {
@@ -337,13 +338,31 @@ function hideMobileCommentBtn(){
 //-------------------------------------------
 
 const commentHTML =
+"<div class='h_wrapper'>" + 
   "<form class='h_comment'>" +
-    "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" +
-    "<div class='h_close'>" + 
-     // `<svg style='width:16px; height:16px' viewbox='0 0 100 100'> <g id="Version-One" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="Desktop-HD" 
-     //   fill="#AAAAAA" fill-rule="nonzero"><path d="M316.070312,611 L320.5,605.03125 L316.59375,599.546875 L318.398438,599.546875 L320.476562,602.484375 C320.908856,603.093753 321.216145,603.562498 321.398438,603.890625 C321.653647,603.473956 321.955727,603.039065 322.304688,602.585938 L324.609375,599.546875 L326.257812,599.546875 L322.234375,604.945312 L326.570312,611 L324.695312,611 L321.8125,606.914062 C321.651041,606.679686 321.484376,606.424481 321.3125,606.148438 C321.05729,606.565106 320.875001,606.851562 320.765625,607.007812 L317.890625,611 L316.070312,611 Z" id="X"></path></g></g></svg>` +
-    "</div>" +
-  "</form>"
+    "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" + 
+  "</form>" +
+  "<div class='h_submit'>" + 
+    '<svg width="10px" height="10px" viewBox="0 0 13 10" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+      '<g id="Version-Three---WP" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">' +
+          '<g id="Artboard" transform="translate(-1507.000000, -412.000000)" fill="#8E8E8E" fill-rule="nonzero">' +
+              '<g id="confirm" transform="translate(1507.000000, 412.000000)">' +
+                  '<polygon id="Path" points="3.5456019 10 0 6.66666667 1.18159716 5.55580952 3.5456019 7.77828571 11.8184028 0 13 1.1116"></polygon>' +
+              '</g>' +
+          '</g>' +
+      '</g>' +
+    '</svg>' + 
+  "</div>" + 
+  "<div class='h_cancel'>" + 
+    '<svg width="9px" height="2px" viewBox="0 0 12 2" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+        '<g id="Version-Three---WP" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">' + 
+            '<g id="Artboard" transform="translate(-1507.000000, -460.000000)" fill="#8E8E8E">' + 
+                '<rect id="cancel" x="1507" y="460" width="12" height="2"></rect>' + 
+            '</g>' + 
+        '</g>' + 
+    '</svg>' + 
+  "</div>" + 
+"</div>"
 
 function addCommentComponent(tag, itemId){
   tag.insertAdjacentHTML("beforeend", commentHTML);
@@ -352,21 +371,41 @@ function addCommentComponent(tag, itemId){
 }
 
 function addEventListenersToComment(itemId) {
-  let itemMarkTags = document.querySelectorAll(`mark[h_id = "${itemId}"]`);
+
+  //submit on enter key
+  var itemMarkTags = document.querySelectorAll(`mark[h_id = "${itemId}"]`);
   itemMarkTags.forEach(tag => {
     tag.addEventListener("submit", event => {
       event.preventDefault();
       submitComment(tag, itemId);
+      tag.classList.add("submitted");
+      closeComment(itemId);
     })
   });
 
-  let closeButtons = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_close`);
-  closeButtons.forEach(btn => {
+  //open / close on submit icon click
+  var submitButtons = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_submit`);
+  submitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       toggleCommentVisibility(itemId)
     })
   });
+
+  // delete comment
+  var deleteButtons = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_cancel`);
+  deleteButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      deleteComment(itemId)
+    })
+  });
 }
+
+function closeComment(itemId) {
+  setTimeout(() => {
+    toggleCommentVisibility(itemId)
+  }, 500);
+}
+
 
 function toggleCommentVisibility(itemId) {
   state.items.map(item => {
@@ -378,11 +417,10 @@ function toggleCommentVisibility(itemId) {
 }
 
 function submitComment(tag, itemId){
-  // ! need a more versatile method here than grabbing childNodes[x], breaks too easily on html changes
-  let inputField = tag.childNodes[1].childNodes[0];
+  var inputField = tag.querySelector("input");
   inputField.blur();
   //take innerText, add to state ID 
-  let comment = document.querySelector(`mark[h_id = "${itemId}"] input`).value;
+  var comment = document.querySelector(`mark[h_id = "${itemId}"] input`).value;
   state.items.forEach(item => {
     if (item.id === itemId){
       item.comment = comment; 
@@ -392,6 +430,48 @@ function submitComment(tag, itemId){
   if (comment !== ""){
     buildFeedbackObj(itemId);
   }
+}
+
+function deleteComment(itemId) {
+  let newItems = state.items.filter(item => {
+    if ( item.id !== itemId ){
+      return item;
+    }
+    else {
+      //TODO if it has .submitted class, then
+        removeCommentFromDB(item);  //TODO get this to actually work
+    }
+  });
+  state.items = newItems;
+  //TODO now that it's out of state, remove the html comment (or do that first?)
+}
+
+function removeCommentFromDB(item){
+
+  console.log('item to remove : ', item);
+  var userId = getUserId();
+  var highlight = item.highlight; 
+  var highlightWithContext = item.highlightTextContext;
+  var comment = item.comment; 
+  var pageName = document.title;
+  var pageURL = document.location.href;
+  var adminHref = sa_ajax.ajaxurl;
+
+ var mailData = {
+   'action': 'deleteFeedback',
+   'userId': userId,
+   'highlight': highlight,
+   'highlightWithContext': highlightWithContext,
+   'comment': comment,
+   'pageName': pageName,
+   'pageURL': pageURL
+ };
+
+ $.post(adminHref, mailData, function (response) {
+   //console.log('Response: ', response);
+ });
+
+
 }
 
 function buildFeedbackObj(itemId){
@@ -410,15 +490,15 @@ function buildFeedbackObj(itemId){
 function rerenderComponentsVisibility(){
   state.items.map( item => {
     if (item.visible){
-      let itemForms = document.querySelectorAll(`mark[h_id = "${item.id}"] form`);
-      itemForms.forEach(form => {
-        form.classList.remove("hidden");
+      var itemForms = document.querySelectorAll(`mark[h_id = "${item.id}"]`);
+      itemForms.forEach(item => {
+        item.classList.remove("hidden");
       });
     }
     else {
-      let itemForms = document.querySelectorAll(`mark[h_id = "${item.id}"] form`);
-      itemForms.forEach(form => {
-        form.classList.add("hidden");
+      var itemForms = document.querySelectorAll(`mark[h_id = "${item.id}"]`);
+      itemForms.forEach(item => {
+        item.classList.add("hidden");
       });
     }
   })
@@ -427,7 +507,6 @@ function rerenderComponentsVisibility(){
 
 // Sending Report 
 //-------------------------------------------
-
 
 function getUserId(){
   if (storageAvailable('localStorage')) {
@@ -474,9 +553,9 @@ function sendFeedbackToDB(feedback){
   //console.table(obj);
 
   var mailData = { 'action': 'siteWideMessage', 'userId': userId, 'highlight': highlight, 'highlightWithContext': highlightWithContext, 'comment': comment, 'pageName': pageName, 'pageURL': pageURL};
-  console.log("posting feedback");
+
   $.post(adminHref, mailData, function (response) {
-    console.log('Response: ', response);
+    //console.log('Response: ', response);
   });
   
 };
@@ -490,18 +569,18 @@ function sendFeedbackToDB(feedback){
 
 //Rangy Code worth remembering
 /* alert(rangy.getSelection());                               -- gets the highlight selection 
-let elem = getHighlightEl(tag);                               --- get the element highlight
-let fText = elem.getRange().nativeRange.commonAncestorContainer.innerText;  -- gets the parent container text
-let rangeStart = elem.characterRange.start;                   -- character ranges
-let getRange = elem.getRange()                                -- element range
-let parentText = getRange.commonAncestorContainer.innerText;  --- the parent that contains the bigger chunk of text
-let highlightText = getRange.endContainer.data;               --- the string of the highlighted text
-let startOffset = getRange.startOffset;                       --- the offset of the highlight from the beginning of the element
-let start = getRange.startContainer.data;                     --- all the preceding text before highlight in that element 
-let startIndex = parentText.indexOf(start)                    --- how far off of parentText our start text begins
-let beginningOffset = startIndex + startOffset;
-let preHighlightText = parentText.slice(0, beginningOffset)
-let postHighlightText = parentText.slice(startOfPostHighlight)
+var elem = getHighlightEl(tag);                               --- get the element highlight
+var fText = elem.getRange().nativeRange.commonAncestorContainer.innerText;  -- gets the parent container text
+var rangeStart = elem.characterRange.start;                   -- character ranges
+var getRange = elem.getRange()                                -- element range
+var parentText = getRange.commonAncestorContainer.innerText;  --- the parent that contains the bigger chunk of text
+var highlightText = getRange.endContainer.data;               --- the string of the highlighted text
+var startOffset = getRange.startOffset;                       --- the offset of the highlight from the beginning of the element
+var start = getRange.startContainer.data;                     --- all the preceding text before highlight in that element 
+var startIndex = parentText.indexOf(start)                    --- how far off of parentText our start text begins
+var beginningOffset = startIndex + startOffset;
+var preHighlightText = parentText.slice(0, beginningOffset)
+var postHighlightText = parentText.slice(startOfPostHighlight)
 */
 
 

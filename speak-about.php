@@ -139,6 +139,9 @@ register_activation_hook( __FILE__, 'speakabout_install' );
 add_action( 'wp_ajax_siteWideMessage', 'speakabout_store_feedback' );
 add_action( 'wp_ajax_nopriv_siteWideMessage', 'speakabout_store_feedback' );
 
+add_action( 'wp_ajax_deleteFeedback', 'speakabout_remove_feedback' );
+add_action( 'wp_ajax_nopriv_deleteFeedback', 'speakabout_remove_feedback' );
+
 function speakabout_store_feedback(){
 
 	global $wpdb;
@@ -289,6 +292,38 @@ function send_email($report){
 
     die();
 }
+
+/* REMOVE FROM DB
+ ----------------------------- */
+function speakabout_remove_feedback(){
+
+	echo "removing data";
+
+	global $wpdb;
+
+	$commenter_id = $_POST['userId'];
+	$highlight = $_POST['highlight'];
+	$highlight_with_context = $_POST['highlightWithContext'];
+	$comment = $_POST['comment'];
+	$page_name = $_POST['pageName'];
+	$page_url = $_POST['pageURL'];
+	$has_been_emailed = 0;
+
+	//check for commenter id, the page url, the highlight, the comment
+	$table_name = $wpdb->prefix . 'speakabout';
+	
+	$wpdb->delete( 
+		$table_name, 
+		array( 
+			'commenter_id' => $commenter_id, 
+			'highlight' => $highlight, 
+			'comment' => $comment, 
+			'page_url' => $page_url, 
+		) 
+	); 
+	die();
+}
+
 
 
 /* OPTIONS ADMIN 

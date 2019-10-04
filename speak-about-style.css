@@ -1,7 +1,86 @@
 mark.h_item {
     position:relative;
 }
-mark.h_item .h_comment {
+mark.h_item .h_wrapper {
+    position:absolute;
+    min-width: 200px;
+    right: -15px;
+    top:-45px;
+    border-radius: 5px;
+    padding: 0px;
+    margin: 0px;
+    z-index: 2px;
+}
+
+mark.h_item .h_wrapper .h_comment{
+    width: 87%;
+    background-color:#fff;
+    box-shadow: 0px 3px 5px 1px rgba(0, 0, 0, 0.20);
+}
+
+mark.h_item .h_wrapper .h_comment input{
+    width: 100%;
+    font-size: 15px;
+    color: #5B5B5B;
+    font-family: sans-serif;
+}
+
+mark.h_item .h_wrapper .h_submit,
+mark.h_item .h_wrapper .h_cancel {
+    position: absolute;
+    right: 0px;
+    width: 20px;
+    height: 20px;
+    background-color:#fff;
+    box-shadow: 0px 3px 5px 0px rgba(0, 0, 0, 0.20);
+    border-radius: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color .3s ease-out, top .05s ease-in-out;
+}
+mark.h_item .h_wrapper .h_submit{
+    top:1px;
+}
+mark.h_item .h_wrapper .h_cancel{
+    top: 24px; 
+}
+mark.h_item .h_wrapper .h_submit:hover,
+mark.h_item.submitted .h_wrapper .h_submit {
+    cursor:pointer;
+    background-color: #5BC992;
+}
+mark.h_item .h_wrapper .h_submit g,
+mark.h_item .h_wrapper .h_cancel g {
+    transition: fill .1s ease-out;
+}
+mark.h_item .h_wrapper .h_submit:hover g,
+mark.h_item .h_wrapper .h_cancel:hover g,
+mark.h_item.submitted .h_wrapper .h_submit g{
+    fill:#fff;
+}
+mark.h_item .h_wrapper .h_cancel:hover {
+    cursor:pointer;
+    background-color: #FF7070;
+}
+
+
+mark.h_item.hidden .h_comment {
+    height: 0;
+    width: 0;
+}
+mark.h_item.hidden .h_comment input {
+    display: none;
+}
+mark.h_item.hidden .h_wrapper .h_submit{
+    top: 33px;
+}
+mark.h_item.hidden .h_wrapper .h_cancel{
+    display:none;
+}
+
+
+/* mark.h_item .h_comment {
     position: absolute;
     right:0;
     top:-45px;
@@ -32,16 +111,16 @@ mark.h_item .h_comment .h_close {
     align-items:center;
     transform: all .2s ease;
 }
-mark.h_item .h_comment.hidden {
-    height: 0; 
-    width: 0;
-}
-mark.h_item .h_comment.hidden input {
-    display:none;
-}
+
 mark.h_item .h_comment.hidden .h_close {
     top: 36px;
-}
+} */
+
+
+
+
+
+
 
 /* Default colors */
 mark.h_item {
