@@ -95,20 +95,19 @@ function isNotJustAClick(highlight) {
 }
 
 function updatePageSelectionColor(){  
-  //TODO add defaults if nothing from db
   if (typeof highlightColor !== 'undefined') {
     let style = document.createElement('style');
     style.innerHTML = `
-      .h_item {
+      #speakaboutWrapper mark.h_item {
         background-color: ${highlightColor};
       }
-      .h_close {
+      #speakaboutWrapper mark.h_item .h_comment .h_close {
         border-color: ${highlightColor};
       }
-      .hidden .h_close {
+      #speakaboutWrapper mark.h_item .h_comment.hidden .h_close {
         background-color: ${highlightColor};
       }
-      ::selection {
+      #speakaboutWrapper ::selection {
           background-color: ${highlightColor} !important;
       }
     `;
@@ -278,6 +277,7 @@ function removeExtraCommentComponents(itemId){
 
 function setupMobile(){
   if (isMobile()){
+    console.log('is mobile');
     window.addEventListener("touchend", function(){
       if (window.getSelection().toString()){
         showMobileCommentBtn();
@@ -323,7 +323,10 @@ function mobileComment(){
 }
 
 function hideMobileCommentBtn(){
-  document.querySelector("#sa_commentBtn").remove();
+  var mobileBtn = document.querySelector("#sa_commentBtn");
+  if (mobileBtn) {
+    mobileBtn.remove();
+  }
 }
 
 

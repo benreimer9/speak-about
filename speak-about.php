@@ -1,14 +1,14 @@
 <?php
 /**
  * @package SpeakAbout
- * @version 1.0.0
+ * @version 1.0
  */
 /*
 Plugin Name: SpeakAbout
 Plugin URI: https://speakabout.io/
 Description: Connect with your blog readers through an interactive highlighting tool.
 Author: Ben Reimer
-Version: 1.0.0
+Version: 1.0
 Author URI: https://www.benreimer.design
 */
 
@@ -20,14 +20,27 @@ function speakabout_enqueue_script() {
 	wp_enqueue_script('rangyhighlighter', plugin_dir_url(__FILE__) . 'rangy-highlighter.js');
 	wp_enqueue_script('index', plugin_dir_url(__FILE__) . 'index.js', array('jquery'));
 	wp_enqueue_style('speakaboutstyle', plugin_dir_url(__FILE__) . 'speak-about-style.css');
-	wp_enqueue_style( 'settingspage', plugin_dir_url(__FILE__) . 'speak-about-settings.css' );
 	wp_localize_script( 'index', 'sa_ajax', array( 
 	'ajaxurl' => admin_url( 'admin-ajax.php')
 	));
 }
 add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
 
-/* CRON JOB TEST
+
+
+/* CHECK FOR UPDATES
+ ----------------------------- */
+
+include plugin_dir_path( __FILE__ ) . 'plugin-update-checker/plugin-update-checker.php';
+$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
+	'https://speakabout.io/lakj3fdaJ4dsen34k567ldasjf/plugin.json',
+	__FILE__, //Full path to the main plugin file or functions.php.
+	'speak-about' //unique plugin name or slug
+);
+
+
+
+/* CRON JOB 
  ----------------------------- */
 
 add_filter( 'cron_schedules', 'thirty_second_interval' );
@@ -86,6 +99,24 @@ function speakabout_install(){
 
 	if ( $installed_ver != $speakabout_db_version ) {
 		//update the db if necessary
+
+		// $sql = "CREATE TABLE $table_name (
+		// 	id mediumint(9) NOT NULL AUTO_INCREMENT,
+		// 	time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+		// 	commenter_id text NOT NULL,
+		// 	highlight text NOT NULL,
+		// 	highlight_with_context text NOT NULL,
+		// 	comment text NOT NULL,
+		// 	page_name text NOT NULL,
+		// 	page_url text NOT NULL,
+		// 	has_been_emailed boolean NOT NULL default 0,
+		// 	PRIMARY KEY  (id)
+		// ) $charset_collate;";
+
+		// require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+		// dbDelta( $sql );
+		
+		update_option(  'speakabout_db_version', $speakabout_db_version  );
 	}
 }
 
@@ -93,7 +124,7 @@ function speakabout_update_db_check() {
     global $speakabout_db_version;
     if ( get_site_option( 'speakabout_db_version' ) != $speakabout_db_version ) {
         speakabout_install();
-    }
+	}
 }
 add_action( 'plugins_loaded', 'speakabout_update_db_check' );
 register_activation_hook( __FILE__, 'speakabout_install' );
@@ -265,7 +296,6 @@ add_action( 'admin_menu', 'speakabout_add_admin_menu' );
 add_action( 'admin_init', 'speakabout_settings_init' );
 
 function speakabout_plugin_scripts($hook) {
-	//TODO set this up properly, right now it runs on every page. 
     if ( 'toplevel_page_speakabout_settings' != $hook ) {
         return;
     }
@@ -334,7 +364,7 @@ function speakabout_settings_init(  ) {
         __( 'Feedback', 'wordpress' ),
         'speakAbout_bugreport_section_callback',
         'saPlugin'
-	);	
+	);
 }
 
 

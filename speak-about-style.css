@@ -15,7 +15,8 @@ mark.h_item .h_comment input[type="text"] {
     border:none;
 }
 mark.h_item .h_comment .h_close {
-    border: 3px solid #aaa;
+    border-style: solid;
+    border-width: 3px;
     cursor: pointer;
     position: absolute;
     top:-3px;
@@ -39,23 +40,24 @@ mark.h_item .h_comment.hidden input {
     display:none;
 }
 mark.h_item .h_comment.hidden .h_close {
-    background-color:#FFA8A8;
     top: 36px;
 }
 
-/* #popup {
-    font-size: 12px;
-    font-family: 'Courier New', Courier, monospace;
-    position:fixed;
-    top: 50px;
-    left: 50px;
-    z-index: 4;
-    background-color: white;
-    min-width: 90px;
-    padding: 20px 10px;
-    box-shadow: 1px 1px 2px 3px rgba(0,0,0,0.06);
-    border-radius: 4px;
-} */
+/* Default colors */
+mark.h_item {
+    background-color: #ccc;
+}
+mark.h_item .h_comment .h_close{
+    border-color: #ccc;
+}
+mark.h_item .h_comment.hidden .h_close{
+    background-color: #ccc;
+}
+#speakaboutWrapper ::selection{
+    background-color: #ccc;
+}
+
+
 
 #sa_commentBtn {
  position: fixed;
