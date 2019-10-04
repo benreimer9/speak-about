@@ -10,6 +10,7 @@ Description: Connect with your blog readers through an interactive highlighting 
 Author: Ben Reimer
 Version: 1.0
 Author URI: https://www.benreimer.design
+All Rights Reserved. 
 */
 
 
