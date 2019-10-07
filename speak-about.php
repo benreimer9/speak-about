@@ -297,8 +297,6 @@ function send_email($report){
  ----------------------------- */
 function speakabout_remove_feedback(){
 
-	echo "removing data";
-
 	global $wpdb;
 
 	$commenter_id = $_POST['userId'];
@@ -309,16 +307,15 @@ function speakabout_remove_feedback(){
 	$page_url = $_POST['pageURL'];
 	$has_been_emailed = 0;
 
-	//check for commenter id, the page url, the highlight, the comment
 	$table_name = $wpdb->prefix . 'speakabout';
 	
 	$wpdb->delete( 
 		$table_name, 
 		array( 
-			'commenter_id' => $commenter_id, 
-			'highlight' => $highlight, 
-			'comment' => $comment, 
-			'page_url' => $page_url, 
+			'commenter_id' => $commenter_id,
+			'page_url' => $page_url,
+			'highlight' => $highlight,
+			'comment' => $comment
 		) 
 	); 
 	die();

@@ -262,7 +262,7 @@ function removeExtraCommentComponents(itemId){
   
   var commentComponentList; 
   if (numberOfTags > 1){
-    commentComponentList = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_comment`);
+    commentComponentList = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_wrapper`);
     for (i = 0; i < numberOfTags; i++) {
       if (i != numberOfTags - 1) {
         commentComponentList[i].remove(); 
@@ -433,24 +433,36 @@ function submitComment(tag, itemId){
 }
 
 function deleteComment(itemId) {
+  console.log('deleting comment');
+  //remove from state
   let newItems = state.items.filter(item => {
     if ( item.id !== itemId ){
       return item;
     }
     else {
-      //TODO if it has .submitted class, then
-        removeCommentFromDB(item);  //TODO get this to actually work
+      var itemClasslist = document.querySelector(`mark[h_id = "${itemId}"]`).classList;
+      if (itemClasslist.contains('submitted')){
+        removeCommentFromDB(item); 
+      }
     }
   });
   state.items = newItems;
-  //TODO now that it's out of state, remove the html comment (or do that first?)
+
+  //remove from html
+  let tagsToRemove = document.querySelectorAll(`mark[h_id = "${itemId}"]`);
+  let commentsToRemove = document.querySelector(`mark[h_id = "${itemId}"] .h_wrapper`);
+  let parentTag = tagsToRemove[0].parentElement;
+
+  commentsToRemove.remove();
+  $(tagsToRemove).contents().unwrap();
+  parentTag.normalize(); //fix the messed up text nodes back to normal after the unwrap
+  
 }
 
 function removeCommentFromDB(item){
 
-  console.log('item to remove : ', item);
   var userId = getUserId();
-  var highlight = item.highlight; 
+  var highlight = item.highlightText; 
   var highlightWithContext = item.highlightTextContext;
   var comment = item.comment; 
   var pageName = document.title;
