@@ -178,12 +178,38 @@ function speakabout_store_feedback(){
 
 function speakabout_update_feedback(){
 
+
+	global $wpdb;
+	$wpdb->show_errors;
+
+	$commenter_id = $_POST['userId'];
+	$item_id = $_POST['itemId'];
+	$highlight = $_POST['highlight'];
+	$highlight_with_context = $_POST['highlightWithContext'];
+	$comment = $_POST['comment'];
+	$page_name = $_POST['pageName'];
+	$page_url = $_POST['pageURL'];
+	$has_been_emailed = 0;
+
+	$table_name = $wpdb->prefix . 'speakabout';
+	
+	$wpdb->update( 
+		$table_name, 
+		array( 
+			'comment' => $comment
+		),
+		array( 
+			'item_id' => $item_id
+		) 
+	); 
+
+	$wpdb->print_error;
+	exit( var_dump( $wpdb->last_query ) );
+	die();
 }
 
 function speakabout_delete_feedback(){
 
-	echo "deleting";
-	
 	global $wpdb;
 	$commenter_id = $_POST['userId'];
 	$item_id = $_POST['itemId'];

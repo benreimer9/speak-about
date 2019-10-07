@@ -400,6 +400,9 @@ function addEventListenersToComment(itemId) {
   itemMarkTags.forEach(tag => {
     tag.addEventListener("submit", event => {
       event.preventDefault();
+      console.log('tag ', tag);
+      z = tag;
+      //! this is not working, yet the submit click button one does
       if (tag.classList.contains('.submitted')){
         updateComment(itemId);
         closeComment(itemId);
@@ -416,6 +419,8 @@ function addEventListenersToComment(itemId) {
   submitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       let tag = btn.closest("mark");
+      console.log('tag ', tag);
+      z = tag;
       if (tag.classList.contains('hidden')){
         toggleCommentVisibility(itemId)
       }
@@ -486,6 +491,7 @@ function submitComment(tag, itemId){
 }
 
 function updateComment(itemId){
+  console.log('update the comment!');
   var item = getItemFromItemId(itemId)
   var action = 'updateFeedback';
   sendToDatabase(item, action);
