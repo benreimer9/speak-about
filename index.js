@@ -111,6 +111,9 @@ function updatePageSelectionColor(){
       #speakaboutWrapper ::selection {
           background-color: ${highlightColor} !important;
       }
+      #speakaboutWrapper mark.h_item.submitted.h_blend.hidden .h_wrapper .h_submit{
+        background-color: ${highlightColor};
+      }
     `;
     document.querySelector("body").insertAdjacentElement("afterbegin", style)
   }
@@ -128,7 +131,7 @@ function buildNewItem(){
   var itemId = null;
   newMarkTags.forEach(tag => {
     if (itemId === null){
-      itemId = getIdFromHighlight(tag) //on multi-tag highlights the last getIdFromHighlight fails for unknown reasons this if statement is a simple way of just avoiding that altogether. Only get it the first time, then store.
+      itemId = getIdFromTag(tag) //on multi-tag highlights the last getIdFromHighlight fails for unknown reasons this if statement is a simple way of just avoiding that altogether. Only get it the first time, then store.
     } 
     addIdToTag(tag, itemId);
     addCommentComponent(tag, itemId);
@@ -248,7 +251,7 @@ function addIdToTag(tag, itemId){
   tag.setAttribute("h_id", itemId);
 }
 
-function getIdFromHighlight(tag) {
+function getIdFromTag(tag) {
   return highlighter.getHighlightForElement(tag).id;
 }
 
@@ -387,7 +390,15 @@ function addEventListenersToComment(itemId) {
   var submitButtons = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_submit`);
   submitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
-      toggleCommentVisibility(itemId)
+      let tag = btn.closest("mark");
+      if (tag.classList.contains('hidden')){
+        toggleCommentVisibility(itemId)
+      }
+      else {
+        submitComment(tag, itemId);
+        tag.classList.add("submitted");
+        closeComment(itemId);
+      }      
     })
   });
 
@@ -402,7 +413,10 @@ function addEventListenersToComment(itemId) {
 
 function closeComment(itemId) {
   setTimeout(() => {
-    toggleCommentVisibility(itemId)
+    toggleCommentVisibility(itemId);
+    setTimeout(() => {
+      addSubmitBtnColor(itemId);
+    }, 500)
   }, 500);
 }
 
@@ -412,6 +426,15 @@ function toggleCommentVisibility(itemId) {
     if (item.id === itemId) {
       item.visible = !item.visible;
       rerenderComponentsVisibility();
+    }
+  })
+}
+
+function addSubmitBtnColor(itemId){
+  state.items.map(item => {
+    if (item.id === itemId) {
+      let tag = document.querySelector(`mark[h_id = "${itemId}"]`);
+      tag.classList.add("h_blend");
     }
   })
 }
