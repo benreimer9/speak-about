@@ -306,6 +306,7 @@
             },
 
             getIntersectingHighlights: function (ranges) {
+                console.log("intersection");
                 // Test each range against each of the highlighted ranges to see whether they overlap
                 var intersectingHighlights = [],
                     highlights = this.highlights;

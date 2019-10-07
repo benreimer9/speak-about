@@ -48,7 +48,7 @@ add_filter( 'cron_schedules', 'thirty_second_interval' );
  
 function thirty_second_interval( $schedules ) {
     $schedules['thirty_seconds'] = array(
-        'interval' => 30,
+        'interval' => 10800,
         'display'  => esc_html__( 'Every Thirty Seconds' ),
     );
     return $schedules;
@@ -82,6 +82,7 @@ function speakabout_install(){
 		id mediumint(9) NOT NULL AUTO_INCREMENT,
 		time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
 		commenter_id text NOT NULL,
+		item_id text NOT NULL,
 		highlight text NOT NULL,
 		highlight_with_context text NOT NULL,
 		comment text NOT NULL,
@@ -136,17 +137,19 @@ register_activation_hook( __FILE__, 'speakabout_install' );
  ----------------------------- */
 // remove all the extra global wpdb's, ya? 
 
-add_action( 'wp_ajax_siteWideMessage', 'speakabout_store_feedback' );
-add_action( 'wp_ajax_nopriv_siteWideMessage', 'speakabout_store_feedback' );
+add_action( 'wp_ajax_addFeedback', 'speakabout_store_feedback' );
+add_action( 'wp_ajax_nopriv_addFeedback', 'speakabout_store_feedback' );
 
-add_action( 'wp_ajax_deleteFeedback', 'speakabout_remove_feedback' );
-add_action( 'wp_ajax_nopriv_deleteFeedback', 'speakabout_remove_feedback' );
+add_action( 'wp_ajax_deleteFeedback', 'speakabout_delete_feedback' );
+add_action( 'wp_ajax_nopriv_deleteFeedback', 'speakabout_delete_feedback' );
+
+add_action( 'wp_ajax_updateFeedback', 'speakabout_update_feedback' );
+add_action( 'wp_ajax_nopriv_updateFeedback', 'speakabout_update_feedback' );
 
 function speakabout_store_feedback(){
-
 	global $wpdb;
-
 	$commenter_id = $_POST['userId'];
+	$item_id = $_POST['itemId'];
 	$highlight = $_POST['highlight'];
 	$highlight_with_context = $_POST['highlightWithContext'];
 	$comment = $_POST['comment'];
@@ -161,6 +164,7 @@ function speakabout_store_feedback(){
 		array( 
 			'time' => current_time( 'mysql' ), 
 			'commenter_id' => $commenter_id, 
+			'item_id' => $item_id, 
 			'highlight' => $highlight, 
 			'highlight_with_context' => $highlight_with_context, 
 			'comment' => $comment, 
@@ -172,6 +176,36 @@ function speakabout_store_feedback(){
 	die();
 }
 
+function speakabout_update_feedback(){
+
+}
+
+function speakabout_delete_feedback(){
+
+	echo "deleting";
+	
+	global $wpdb;
+	$commenter_id = $_POST['userId'];
+	$item_id = $_POST['itemId'];
+	$highlight = $_POST['highlight'];
+	$highlight_with_context = $_POST['highlightWithContext'];
+	$comment = $_POST['comment'];
+	$page_name = $_POST['pageName'];
+	$page_url = $_POST['pageURL'];
+	$has_been_emailed = 0;
+
+	$table_name = $wpdb->prefix . 'speakabout';
+	
+	$wpdb->delete( 
+		$table_name, 
+		array( 
+			'commenter_id' => $commenter_id,
+			'item_id' => $item_id, 
+			'page_url' => $page_url
+		) 
+	); 
+	die();
+}
 
 /* DECIDE WHAT FEEDBACK TO EMAIL OUT
  ----------------------------- */
@@ -292,35 +326,6 @@ function send_email($report){
 
     die();
 }
-
-/* REMOVE FROM DB
- ----------------------------- */
-function speakabout_remove_feedback(){
-
-	global $wpdb;
-
-	$commenter_id = $_POST['userId'];
-	$highlight = $_POST['highlight'];
-	$highlight_with_context = $_POST['highlightWithContext'];
-	$comment = $_POST['comment'];
-	$page_name = $_POST['pageName'];
-	$page_url = $_POST['pageURL'];
-	$has_been_emailed = 0;
-
-	$table_name = $wpdb->prefix . 'speakabout';
-	
-	$wpdb->delete( 
-		$table_name, 
-		array( 
-			'commenter_id' => $commenter_id,
-			'page_url' => $page_url,
-			'highlight' => $highlight,
-			'comment' => $comment
-		) 
-	); 
-	die();
-}
-
 
 
 /* OPTIONS ADMIN 

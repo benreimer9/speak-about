@@ -8,6 +8,7 @@ https://github.com/timdown/rangy/wiki/
  -------------------------- */
  var s; 
  var z;
+ var l;
 (function ($) {
 $(document).ready(function () {
 
@@ -39,7 +40,6 @@ Intro paragraph
 //-------------------------------------------
 var serializedHighlights = decodeURIComponent(window.location.search.slice(window.location.search.indexOf("=") + 1));
 var highlighter;
-var initialDoc;
 
 window.onload = function () {
   rangy.init();
@@ -48,10 +48,11 @@ window.onload = function () {
   highlighter.addClassApplier(rangy.createClassApplier("h_item", {
     ignoreWhiteSpace: true,
     elementTagName: "mark",
-    elementProperties: {
-      href: "#"
+    elementAttributes : {
+      h_id: "default"
     }
   }));
+
 };
 //-------------------------------------------
 
@@ -66,8 +67,8 @@ var state = {
     /* example item
       {
        id:0,
-       highlightText:"",
-       highlightTextContext:"", 
+       highlight:"",
+       highlightWithContext:"", 
        comment:"",
        visible:false,
        numOfTags:0,
@@ -75,7 +76,12 @@ var state = {
     */
   ],
 };
+var customIdBank = {
+  // connects rangy's highlight Id to database custom Id 
+  // the key is rangy id, the value is custom id
+}
 s = state;
+l = customIdBank;
 
 function setupSpeakAbout(){
   setupMobile();
@@ -160,7 +166,7 @@ function findNewMarkTags(){
   var allMarkTags = document.querySelectorAll("mark");
   newMarktags = Array.prototype.slice
     .call(allMarkTags)
-    .filter(tag => !tag.getAttribute('h_id'));
+    .filter(tag => tag.getAttribute('h_id') === "default");
   return newMarktags;
 }
 
@@ -169,8 +175,8 @@ function addItemToState(tag, itemId){
     state.items.map(item => {
       if (item.id === itemId) {
         item.numOfTags++;
-        item.highlightText += tag.innerText;
-        item.highlightTextContext = getHighlightTextContext(tag, itemId)
+        item.highlight += tag.innerText;
+        item.highlightWithContext = getHighlightTextContext(tag, itemId)
       }
     })
   }
@@ -180,8 +186,8 @@ function addItemToState(tag, itemId){
       comment:"",
       visible:true,
       numOfTags:1,
-      highlightText: tag.innerText,
-      highlightTextContext: getHighlightTextContext(tag, itemId)
+      highlight: tag.innerText,
+      highlightWithContext: getHighlightTextContext(tag, itemId)
     })
   }
 }
@@ -252,7 +258,18 @@ function addIdToTag(tag, itemId){
 }
 
 function getIdFromTag(tag) {
-  return highlighter.getHighlightForElement(tag).id;
+  //return highlighter.getHighlightForElement(tag).id;
+  return createTagId();
+}
+
+function getItemFromItemId(itemId){
+  specifiedItem = {}
+  state.items.forEach(item => {
+    if (item.id === itemId) {
+      specifiedItem = item;
+    }
+  });
+  return specifiedItem;
 }
 
 function removeExtraCommentComponents(itemId){
@@ -340,35 +357,38 @@ function hideMobileCommentBtn(){
 // COMMENTS
 //-------------------------------------------
 
-const commentHTML =
-"<div class='h_wrapper'>" + 
-  "<form class='h_comment'>" +
-    "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" + 
-  "</form>" +
-  "<div class='h_submit'>" + 
-    '<svg width="10px" height="10px" viewBox="0 0 13 10" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
-      '<g id="Version-Three---WP" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">' +
-          '<g id="Artboard" transform="translate(-1507.000000, -412.000000)" fill="#8E8E8E" fill-rule="nonzero">' +
-              '<g id="confirm" transform="translate(1507.000000, 412.000000)">' +
-                  '<polygon id="Path" points="3.5456019 10 0 6.66666667 1.18159716 5.55580952 3.5456019 7.77828571 11.8184028 0 13 1.1116"></polygon>' +
-              '</g>' +
-          '</g>' +
-      '</g>' +
-    '</svg>' + 
-  "</div>" + 
-  "<div class='h_cancel'>" + 
-    '<svg width="9px" height="2px" viewBox="0 0 12 2" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
-        '<g id="Version-Three---WP" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">' + 
-            '<g id="Artboard" transform="translate(-1507.000000, -460.000000)" fill="#8E8E8E">' + 
-                '<rect id="cancel" x="1507" y="460" width="12" height="2"></rect>' + 
-            '</g>' + 
-        '</g>' + 
-    '</svg>' + 
-  "</div>" + 
-"</div>"
+function commentHTML(){
+  const html =
+  "<div class='h_wrapper'>" + 
+    "<form class='h_comment'>" +
+      "<input type='text' name='comment' placeholder='Comment' autocomplete='false'>" + 
+    "</form>" +
+    "<div class='h_submit'>" + 
+      '<svg width="10px" height="10px" viewBox="0 0 13 10" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+        '<g id="Version-Three---WP" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">' +
+            '<g id="Artboard" transform="translate(-1507.000000, -412.000000)" fill="#8E8E8E" fill-rule="nonzero">' +
+                '<g id="confirm" transform="translate(1507.000000, 412.000000)">' +
+                    '<polygon id="Path" points="3.5456019 10 0 6.66666667 1.18159716 5.55580952 3.5456019 7.77828571 11.8184028 0 13 1.1116"></polygon>' +
+                '</g>' +
+            '</g>' +
+        '</g>' +
+      '</svg>' + 
+    "</div>" + 
+    "<div class='h_cancel'>" + 
+      '<svg width="9px" height="2px" viewBox="0 0 12 2" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+          '<g id="Version-Three---WP" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">' + 
+              '<g id="Artboard" transform="translate(-1507.000000, -460.000000)" fill="#8E8E8E">' + 
+                  '<rect id="cancel" x="1507" y="460" width="12" height="2"></rect>' + 
+              '</g>' + 
+          '</g>' + 
+      '</svg>' + 
+    "</div>" + 
+  "</div>";
+  return html;
+}
 
 function addCommentComponent(tag, itemId){
-  tag.insertAdjacentHTML("beforeend", commentHTML);
+  tag.insertAdjacentHTML("beforeend", commentHTML());
   addEventListenersToComment(itemId);
   //document.getSelection().removeAllRanges(); //remove the browser highlight and keep just the CSS one for better UX
 }
@@ -380,13 +400,18 @@ function addEventListenersToComment(itemId) {
   itemMarkTags.forEach(tag => {
     tag.addEventListener("submit", event => {
       event.preventDefault();
-      submitComment(tag, itemId);
-      tag.classList.add("submitted");
-      closeComment(itemId);
+      if (tag.classList.contains('.submitted')){
+        updateComment(itemId);
+        closeComment(itemId);
+      }
+      else {
+        submitComment(tag, itemId);
+        closeComment(itemId);
+      }
     })
   });
 
-  //open / close on submit icon click
+  //submit with checkmark button
   var submitButtons = document.querySelectorAll(`mark[h_id = "${itemId}"] .h_submit`);
   submitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
@@ -394,9 +419,12 @@ function addEventListenersToComment(itemId) {
       if (tag.classList.contains('hidden')){
         toggleCommentVisibility(itemId)
       }
+      else if (tag.classList.contains('submitted')){
+        updateComment(itemId);
+        closeComment(itemId);
+      }
       else {
         submitComment(tag, itemId);
-        tag.classList.add("submitted");
         closeComment(itemId);
       }      
     })
@@ -420,7 +448,6 @@ function closeComment(itemId) {
   }, 500);
 }
 
-
 function toggleCommentVisibility(itemId) {
   state.items.map(item => {
     if (item.id === itemId) {
@@ -433,13 +460,14 @@ function toggleCommentVisibility(itemId) {
 function addSubmitBtnColor(itemId){
   state.items.map(item => {
     if (item.id === itemId) {
-      let tag = document.querySelector(`mark[h_id = "${itemId}"]`);
+      let tag = document.querySelector(`mark[h_id = "${itemId}"].submitted`);
       tag.classList.add("h_blend");
     }
   })
 }
 
 function submitComment(tag, itemId){
+  tag.classList.add("submitted");
   var inputField = tag.querySelector("input");
   inputField.blur();
   //take innerText, add to state ID 
@@ -451,75 +479,41 @@ function submitComment(tag, itemId){
   });
 
   if (comment !== ""){
-    buildFeedbackObj(itemId);
+    var item = getItemFromItemId(itemId)
+    var action = 'addFeedback';
+    sendToDatabase(item, action);
   }
 }
 
+function updateComment(itemId){
+  var item = getItemFromItemId(itemId)
+  var action = 'updateFeedback';
+  sendToDatabase(item, action);
+}
+
 function deleteComment(itemId) {
-  console.log('deleting comment');
-  //remove from state
+
+  //1. remove from state (and database when applicable)
   let newItems = state.items.filter(item => {
     if ( item.id !== itemId ){
       return item;
     }
     else {
-      var itemClasslist = document.querySelector(`mark[h_id = "${itemId}"]`).classList;
-      if (itemClasslist.contains('submitted')){
-        removeCommentFromDB(item); 
-      }
+        var action = 'deleteFeedback';
+        sendToDatabase(item, action);
     }
   });
   state.items = newItems;
 
-  //remove from html
+  //2. remove from HTML
   let tagsToRemove = document.querySelectorAll(`mark[h_id = "${itemId}"]`);
   let commentsToRemove = document.querySelector(`mark[h_id = "${itemId}"] .h_wrapper`);
   let parentTag = tagsToRemove[0].parentElement;
 
   commentsToRemove.remove();
   $(tagsToRemove).contents().unwrap();
-  parentTag.normalize(); //fix the messed up text nodes back to normal after the unwrap
-  
-}
+  parentTag.normalize(); //fix the messed up text nodes back to normal after the unwrap. This is like, half-effective. 
 
-function removeCommentFromDB(item){
-
-  var userId = getUserId();
-  var highlight = item.highlightText; 
-  var highlightWithContext = item.highlightTextContext;
-  var comment = item.comment; 
-  var pageName = document.title;
-  var pageURL = document.location.href;
-  var adminHref = sa_ajax.ajaxurl;
-
- var mailData = {
-   'action': 'deleteFeedback',
-   'userId': userId,
-   'highlight': highlight,
-   'highlightWithContext': highlightWithContext,
-   'comment': comment,
-   'pageName': pageName,
-   'pageURL': pageURL
- };
-
- $.post(adminHref, mailData, function (response) {
-   //console.log('Response: ', response);
- });
-
-
-}
-
-function buildFeedbackObj(itemId){
-  // This is mostly unnecessary, but does make things a bit cleaner later on. 
-  var feedback = {};
-  state.items.forEach(item => {
-    if (item.id === itemId) {
-      feedback.highlight = item.highlightText;
-      feedback.highlightWithContext = item.highlightTextContext;
-      feedback.comment = item.comment; 
-    }
-  });
-  sendFeedbackToDB(feedback);
 }
 
 function rerenderComponentsVisibility(){
@@ -542,6 +536,34 @@ function rerenderComponentsVisibility(){
 
 // Sending Report 
 //-------------------------------------------
+
+function sendToDatabase(item, action){
+  var userId = getUserId();
+  var itemId = item.id; 
+  var highlight = item.highlight;
+  var highlightWithContext = item.highlightWithContext;
+  var comment = item.comment;
+  var pageName = document.title;
+  var pageURL = document.location.href;
+  var adminHref = sa_ajax.ajaxurl;  
+
+  //action can be : addFeedback, updateFeedback, deleteFeedback
+
+  var mailData = {
+    'action': action,
+    'userId': userId,
+    'itemId': itemId,
+    'highlight': highlight,
+    'highlightWithContext': highlightWithContext,
+    'comment': comment,
+    'pageName': pageName,
+    'pageURL': pageURL
+  };
+
+  $.post(adminHref, mailData, function (response) {
+    console.log('Response: ', response);
+  });
+}
 
 function getUserId(){
   if (storageAvailable('localStorage')) {
@@ -567,34 +589,14 @@ function createUserId() {
   localStorage.setItem('speakabout_userId', id);
   return id;
 }
-
-function sendFeedbackToDB(feedback){
-
-  var userId = getUserId();
-  var highlight = feedback.highlight; 
-  var highlightWithContext = feedback.highlightWithContext;
-  var comment = feedback.comment; 
-  var pageName = document.title;
-  var pageURL = document.location.href;
-  var adminHref = sa_ajax.ajaxurl;  
-
-  // var obj = {};
-  // obj.userId = userId;
-  // obj.highlight = highlight;
-  // obj.highlightWithContext = highlightWithContext;
-  // obj.comment = comment;
-  // obj.pageName = pageName;
-  // obj.pageURL = pageURL;
-  //console.table(obj);
-
-  var mailData = { 'action': 'siteWideMessage', 'userId': userId, 'highlight': highlight, 'highlightWithContext': highlightWithContext, 'comment': comment, 'pageName': pageName, 'pageURL': pageURL};
-
-  $.post(adminHref, mailData, function (response) {
-    //console.log('Response: ', response);
+function createTagId() {
+  var id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0,
+      v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
   });
-  
-};
-
+  return id;
+}
 
 
   //If I'd like the ability to see highlights in context on an actual page it is possible
