@@ -144,6 +144,7 @@ function buildNewItem(){
     addItemToState(tag, itemId);
   });
   removeExtraCommentComponents(itemId);
+  removeNestedComments(); //for overlapping highlights
 }
 
 function highlightIsWithinWrapper(){
@@ -400,10 +401,8 @@ function addEventListenersToComment(itemId) {
   itemMarkTags.forEach(tag => {
     tag.addEventListener("submit", event => {
       event.preventDefault();
-      console.log('tag ', tag);
-      z = tag;
-      //! this is not working, yet the submit click button one does
-      if (tag.classList.contains('.submitted')){
+      commentToState(tag, itemId);
+      if (tag.classList.contains('submitted')){
         updateComment(itemId);
         closeComment(itemId);
       }
@@ -419,16 +418,16 @@ function addEventListenersToComment(itemId) {
   submitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       let tag = btn.closest("mark");
-      console.log('tag ', tag);
-      z = tag;
       if (tag.classList.contains('hidden')){
         toggleCommentVisibility(itemId)
       }
       else if (tag.classList.contains('submitted')){
+        commentToState(tag, itemId);
         updateComment(itemId);
         closeComment(itemId);
       }
       else {
+        commentToState(tag, itemId);
         submitComment(tag, itemId);
         closeComment(itemId);
       }      
@@ -471,19 +470,20 @@ function addSubmitBtnColor(itemId){
   })
 }
 
-function submitComment(tag, itemId){
-  tag.classList.add("submitted");
+function commentToState(tag, itemId){
   var inputField = tag.querySelector("input");
   inputField.blur();
-  //take innerText, add to state ID 
   var comment = document.querySelector(`mark[h_id = "${itemId}"] input`).value;
   state.items.forEach(item => {
-    if (item.id === itemId){
-      item.comment = comment; 
-    }  
+    if (item.id === itemId) {
+      item.comment = comment;
+    }
   });
-
-  if (comment !== ""){
+}
+function submitComment(tag, itemId){
+  var comment = document.querySelector(`mark[h_id = "${itemId}"] input`).value;
+  if (comment !== "") {
+    tag.classList.add("submitted");
     var item = getItemFromItemId(itemId)
     var action = 'addFeedback';
     sendToDatabase(item, action);
@@ -491,7 +491,6 @@ function submitComment(tag, itemId){
 }
 
 function updateComment(itemId){
-  console.log('update the comment!');
   var item = getItemFromItemId(itemId)
   var action = 'updateFeedback';
   sendToDatabase(item, action);
@@ -537,6 +536,47 @@ function rerenderComponentsVisibility(){
       });
     }
   })
+}
+
+function removeNestedComments(){
+  var nested = document.querySelectorAll("mark > mark.h_item");
+  console.log('nested ', nested);
+  nested.forEach(nestItem => {
+    var parent = nestItem.parentElement; 
+    if (parent.hasAttribute('h_id')){
+      //now confirmed the parent mark is indeed a speakabout one and this is nesting
+      //1. move any comment over to the new item
+      var oldItemId = parent.getAttribute("h_id");
+      var newItemId = nestItem.getAttribute("h_id");
+      var oldItemComment;
+      state.items.forEach(item => {
+        if (item.id === oldItemId) {
+            oldItemComment = item.comment; 
+          }
+      });
+      state.items.forEach(item => {
+        if (item.id === newItemId){
+          item.comment = oldItemComment;
+          document.querySelector(`mark[h_id = "${newItemId}"] input`).value = oldItemComment;
+        }
+      });
+
+      //2. remove the old comment html
+      $(parent).contents().unwrap();
+      var oldCommentHTML = document.querySelector(`mark[h_id = "${oldItemId}"] .h_wrapper`);
+      if (oldCommentHTML !== null){
+        oldCommentHTML.parentElement.remove()
+      }
+      
+      //TODO ^^ but does this work with multiple? 
+      //TODO it does not. 
+
+      //3. remove the old comment in the database
+      var item = getItemFromItemId(oldItemId)
+      var action = 'deleteFeedback';
+      sendToDatabase(item, action);
+    }
+  });
 }
 
 

@@ -16,6 +16,7 @@ mark.h_item .h_wrapper .h_comment{
     width: 87%;
     background-color:#fff;
     box-shadow: 0px 3px 5px 1px rgba(0, 0, 0, 0.20);
+    border-radius: 3px;
 }
 
 mark.h_item .h_wrapper .h_comment input{
@@ -23,6 +24,7 @@ mark.h_item .h_wrapper .h_comment input{
     font-size: 15px;
     color: #5B5B5B;
     font-family: sans-serif;
+    border-radius: 3px;
 }
 
 mark.h_item .h_wrapper .h_submit,
