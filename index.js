@@ -137,7 +137,7 @@ function buildNewItem(){
   var itemId = null;
   newMarkTags.forEach(tag => {
     if (itemId === null){
-      itemId = getIdFromTag(tag) //on multi-tag highlights the last getIdFromHighlight fails for unknown reasons this if statement is a simple way of just avoiding that altogether. Only get it the first time, then store.
+      itemId = createTagId();
     } 
     addIdToTag(tag, itemId);
     addCommentComponent(tag, itemId);
@@ -194,7 +194,7 @@ function addItemToState(tag, itemId){
 }
 
 function getHighlightTextContext(tag, itemId) {
-  //make a separate hidden copy of the highlight and text I can manipulate to get the proper format. Remove once compvare.
+  //make a separate hidden copy of the highlight and text I can manipulate to get the proper format. Remove after.
   var elem = getHighlightEl(tag);
   var getRange = elem.getRange()
   var parentElement = getRange.commonAncestorContainer.innerHTML;
@@ -205,6 +205,12 @@ function getHighlightTextContext(tag, itemId) {
   //remove comments from the shadow version
   var shadowComments = document.querySelectorAll(`#SA_SHADOW .h_comment`);
   shadowComments.forEach(el => {
+    el.remove();
+  });
+
+  //remove scripts from the shadow version
+  var shadowScripts = document.querySelectorAll(`#SA_SHADOW script`);
+  shadowScripts.forEach(el => {
     el.remove();
   });
 
@@ -256,11 +262,6 @@ function itemIsAlreadyInState(id){
 
 function addIdToTag(tag, itemId){
   tag.setAttribute("h_id", itemId);
-}
-
-function getIdFromTag(tag) {
-  //return highlighter.getHighlightForElement(tag).id;
-  return createTagId();
 }
 
 function getItemFromItemId(itemId){
@@ -540,7 +541,6 @@ function rerenderComponentsVisibility(){
 
 function removeNestedComments(){
   var nested = document.querySelectorAll("mark > mark.h_item");
-  console.log('nested ', nested);
   nested.forEach(nestItem => {
     var parent = nestItem.parentElement; 
     if (parent.hasAttribute('h_id')){
@@ -567,9 +567,6 @@ function removeNestedComments(){
       if (oldCommentHTML !== null){
         oldCommentHTML.parentElement.remove()
       }
-      
-      //TODO ^^ but does this work with multiple? 
-      //TODO it does not. 
 
       //3. remove the old comment in the database
       var item = getItemFromItemId(oldItemId)

@@ -196,7 +196,10 @@ function speakabout_update_feedback(){
 	$wpdb->update( 
 		$table_name, 
 		array( 
-			'comment' => $comment
+			'comment' => $comment,
+			'highlight' => $highlight, 
+			'highlight_with_context' => $highlight_with_context
+
 		),
 		array( 
 			'item_id' => $item_id
