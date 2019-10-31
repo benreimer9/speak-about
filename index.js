@@ -246,10 +246,6 @@ function getHighlightTextContext(tag, itemId) {
 
   document.querySelector('#SA_SHADOW').remove();
   return reportHTML;
-
-  // TODO further sanitizing for code 
-  // hypothetically a user could write code in their comment that stays as a string until
-  // I send it out in the email, then gets converted to html / css 
 }
 
 function itemIsAlreadyInState(id){
@@ -300,7 +296,6 @@ function removeExtraCommentComponents(itemId){
 
 function setupMobile(){
   if (isMobile()){
-    console.log('is mobile');
     window.addEventListener("touchend", function(){
       if (window.getSelection().toString()){
         showMobileCommentBtn();
@@ -604,7 +599,7 @@ function sendToDatabase(item, action){
   };
 
   $.post(adminHref, mailData, function (response) {
-    console.log('Response: ', response);
+    //console.log('Response: ', response);
   });
 }
 

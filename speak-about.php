@@ -135,7 +135,6 @@ register_activation_hook( __FILE__, 'speakabout_install' );
 
 /* SEND TO DATABASE
  ----------------------------- */
-// remove all the extra global wpdb's, ya? 
 
 add_action( 'wp_ajax_addFeedback', 'speakabout_store_feedback' );
 add_action( 'wp_ajax_nopriv_addFeedback', 'speakabout_store_feedback' );
@@ -531,7 +530,7 @@ function speakAbout_perm_section_callback(  ) {
    // echo __( 'Choose which pages to run SpeakAbout on', 'wordpress' );
 }
 function speakAbout_bugreport_section_callback(  ) {
-     echo __( "Suggestions, bugs, or general feedback? We would love to hear it at <a href='mailto:feedback@speakabout.io'> feedback@speakabout.io </a>", 'wordpress' );
+     echo __( "Suggestions, bugs, or general feedback? We would love to hear it at <a href='mailto:feedback@speakabout.io'> feedback@speakabout.io </a>. <br> Visit our site at <a target='_blank' href='https://www.speakabout.io'> www.speakabout.io</a>", 'wordpress' );
 }
 
 function speakabout_options_page() {
