@@ -4,9 +4,9 @@
  * @version 1.0
  */
 /*
-Plugin Name: SpeakAbout
+Plugin Name: SpeakAbout - Inline comments
 Plugin URI: https://speakabout.io/
-Description: Connect with your blog readers through an interactive highlighting tool.
+Description: Connect with your blog readers through an inline highlighting comments tool.
 Author: Ben Reimer
 Version: 1.0
 Author URI: https://www.benreimer.design
@@ -28,28 +28,15 @@ function speakabout_enqueue_script() {
 add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
 
 
-
-/* CHECK FOR UPDATES
- ----------------------------- */
-
-include plugin_dir_path( __FILE__ ) . 'plugin-update-checker/plugin-update-checker.php';
-$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
-	'https://speakabout.io/lakj3fdaJ4dsen34k567ldasjf/plugin.json',
-	__FILE__, //Full path to the main plugin file or functions.php.
-	'speak-about' //unique plugin name or slug
-);
-
-
-
 /* CRON JOB 
  ----------------------------- */
 
-add_filter( 'cron_schedules', 'thirty_second_interval' );
+add_filter( 'cron_schedules', 'three_hours_interval' );
  
-function thirty_second_interval( $schedules ) {
-    $schedules['thirty_seconds'] = array(
+function three_hours_interval( $schedules ) {
+    $schedules['three_hours'] = array(
         'interval' => 10800,
-        'display'  => esc_html__( 'Every Thirty Seconds' ),
+        'display'  => esc_html__( 'Every Three Hours' ),
     );
     return $schedules;
 }
@@ -57,11 +44,11 @@ function thirty_second_interval( $schedules ) {
 add_action( 'speakabout_cron_hook', 'speakabout_cron_exec' );
 
 if ( ! wp_next_scheduled( 'speakabout_cron_hook' ) ) {
-    wp_schedule_event( time(), 'thirty_seconds', 'speakabout_cron_hook');
+    wp_schedule_event( time(), 'three_hours', 'speakabout_cron_hook');
 }
 
 function speakabout_cron_exec(){
-	build_feedback_emails();
+	speakabout_build_feedback_emails();
 }
 
 
@@ -100,7 +87,7 @@ function speakabout_install(){
 	$installed_ver = get_option( "speakabout_db_version" );
 
 	if ( $installed_ver != $speakabout_db_version ) {
-		//update the db if necessary
+		//update the db if necessary, code here for future versions
 
 		// $sql = "CREATE TABLE $table_name (
 		// 	id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -149,9 +136,9 @@ function speakabout_store_feedback(){
 	global $wpdb;
 	$commenter_id = $_POST['userId'];
 	$item_id = $_POST['itemId'];
-	$highlight = $_POST['highlight'];
-	$highlight_with_context = $_POST['highlightWithContext'];
-	$comment = $_POST['comment'];
+	$highlight = sanitize_text_field($_POST['highlight']);
+	$highlight_with_context = sanitize_text_field($_POST['highlightWithContext']);
+	$comment = sanitize_text_field($_POST['comment']);
 	$page_name = $_POST['pageName'];
 	$page_url = $_POST['pageURL'];
 	$has_been_emailed = 0;
@@ -183,9 +170,9 @@ function speakabout_update_feedback(){
 
 	$commenter_id = $_POST['userId'];
 	$item_id = $_POST['itemId'];
-	$highlight = $_POST['highlight'];
-	$highlight_with_context = $_POST['highlightWithContext'];
-	$comment = $_POST['comment'];
+	$highlight = sanitize_text_field($_POST['highlight']);
+	$highlight_with_context = sanitize_text_field($_POST['highlightWithContext']);
+	$comment = sanitize_text_field($_POST['comment']);
 	$page_name = $_POST['pageName'];
 	$page_url = $_POST['pageURL'];
 	$has_been_emailed = 0;
@@ -215,9 +202,9 @@ function speakabout_delete_feedback(){
 	global $wpdb;
 	$commenter_id = $_POST['userId'];
 	$item_id = $_POST['itemId'];
-	$highlight = $_POST['highlight'];
-	$highlight_with_context = $_POST['highlightWithContext'];
-	$comment = $_POST['comment'];
+	$highlight = sanitize_text_field($_POST['highlight']);
+	$highlight_with_context = sanitize_text_field($_POST['highlightWithContext']);
+	$comment = sanitize_text_field($_POST['comment']);
 	$page_name = $_POST['pageName'];
 	$page_url = $_POST['pageURL'];
 	$has_been_emailed = 0;
@@ -237,7 +224,7 @@ function speakabout_delete_feedback(){
 
 /* DECIDE WHAT FEEDBACK TO EMAIL OUT
  ----------------------------- */
-function build_feedback_emails(){
+function speakabout_build_feedback_emails(){
 	//search through db for unsent comments, build reports, call send function
 
 	global $wpdb;
@@ -251,16 +238,14 @@ function build_feedback_emails(){
 				//this shouldn't happen, in theory. 
 			} 
 			else {
-				//so this user is not yet in the list. 
+				//this user is not yet in the list. 
 				//unknown number of comments
 				$userFeedback = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}speakabout WHERE commenter_id = '" . $commenterId . "'", OBJECT);
 				$numberOfComments = count($userFeedback);
-				//okay so now we know how many comments they have. 
+				//now we know how many comments they have. 
 				//put them in the list so we don't run through their comments again
 				array_push($commenterList, $commenterId);
 				//now that we only run through them once, build the report of their feedback
-				//but you do have to go through and get each of this specific commenter
-				// ^ that's all in the feedback array
 				$emailHeader = build_email_header($result->page_url, $result->page_name);
 				$emailBase = build_email_base();
 				$report = $emailHeader;
@@ -270,7 +255,7 @@ function build_feedback_emails(){
 						$report = $report . htmlify_feedback($feedback->highlight_with_context, $feedback->comment); 
 					}
 				}
-				set_email_bool_to_sent($commenterId);
+				speakabout_set_email_bool_to_sent($commenterId);
 				$report = $report . $emailBase;
 				send_email($report);
 			}		
@@ -278,11 +263,10 @@ function build_feedback_emails(){
    }
 }
 
-function set_email_bool_to_sent($commenter_id){
+function speakabout_set_email_bool_to_sent($commenter_id){
 
 	global $wpdb;
 	$table_name = $wpdb->prefix . 'speakabout';
-
 
 	$wpdb->update( 
 		$table_name, 
@@ -372,8 +356,6 @@ add_action( 'admin_enqueue_scripts', 'speakabout_plugin_scripts' );
 
 
 function speakabout_add_admin_menu() {
-	//add_options_page( 'SpeakAbout', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page');
-
 	add_menu_page( 'SpeakAbout', 'SpeakAbout', 'manage_options', 'speakabout_settings', 'speakabout_options_page', plugin_dir_url(__FILE__) . 'assets/dash-icon.png', 65);
 }
 
@@ -552,7 +534,6 @@ function speakabout_options_page() {
 
 //NOTIFICATION UPON ACTIVATION
 // https://stackoverflow.com/questions/38233751/show-message-after-activating-wordpress-plugin
-//TODO only show message if email address field is actually empty. 
 
 register_activation_hook( __FILE__, 'activation_notice_hook' );
 

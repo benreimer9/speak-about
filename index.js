@@ -6,34 +6,9 @@ Utilizes the Rangy library for range and selection, MIT License https://github.c
 https://github.com/timdown/rangy/wiki/
 
  -------------------------- */
- var s; 
- var z;
- var l;
+ 
 (function ($) {
 $(document).ready(function () {
-
-/* 
-
-UX, Submit comment inputs that haven't been submitted
-- users may not hit enter on their comments. They should still be submitted regardless. (update every second? or on click away?)
-
-- highlight deletion
-
-Floating Controls. 
-- display number of highlights
-- toggle show/hide highlights
-- list highlights
-- go to highlight on list item click 
-
-Intro paragraph 
-- content
-- figure out how it should be placed into page content
-
-- Persistance. Rangy lib had something to keep highlights despite page reload. Look into that for my code? 
-^ it would notify users past highlights have been submitted on page close. Needs to then differentiate them.. 
-- build in guard in case the page has other <mark> tags on it
-- get off jQuery since you're barely using it
-*/
 
 
 // Setup Rangy
@@ -76,12 +51,6 @@ var state = {
     */
   ],
 };
-var customIdBank = {
-  // connects rangy's highlight Id to database custom Id 
-  // the key is rangy id, the value is custom id
-}
-s = state;
-l = customIdBank;
 
 function setupSpeakAbout(){
   setupMobile();
@@ -214,7 +183,7 @@ function getHighlightTextContext(tag, itemId) {
     el.remove();
   });
 
-  //reform the highlight with a span and inline CSS so the highlight appears in the email
+  //reformat the highlight with a span and inline CSS so the highlight appears in the email
   var highlightItemsList = document.querySelectorAll(`#SA_SHADOW mark[h_id="${itemId}"]`);
   var startHighlightStyling = `<span class="SA_HIGHLIGHT" style="line-height: 12px; font-size: 16px; margin: 0; padding:3px; background-color:#ffc2c2">`
   var endHighlightStyling = `</span>`;
