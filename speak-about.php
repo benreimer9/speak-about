@@ -31,9 +31,9 @@ add_action('wp_enqueue_scripts', 'speakabout_enqueue_script');
 /* CRON JOB 
  ----------------------------- */
 
-add_filter( 'cron_schedules', 'three_hours_interval' );
+add_filter( 'cron_schedules', 'speakabout_three_hours_interval' );
  
-function three_hours_interval( $schedules ) {
+function speakabout_three_hours_interval( $schedules ) {
     $schedules['three_hours'] = array(
         'interval' => 10800,
         'display'  => esc_html__( 'Every Three Hours' ),
@@ -119,6 +119,21 @@ add_action( 'plugins_loaded', 'speakabout_update_db_check' );
 register_activation_hook( __FILE__, 'speakabout_install' );
 
 
+/* KSES
+ ----------------------------- */
+ function speakabout_wp_kses() {
+	return array (
+		'a' => array (
+			'href' => array(),
+			'class' => array(),
+		),
+		'div' => array(),
+		'span' => array(),
+		'p' => array(),
+		'mark' => array(),
+	);
+}
+
 
 /* SEND TO DATABASE
  ----------------------------- */
@@ -134,13 +149,13 @@ add_action( 'wp_ajax_nopriv_updateFeedback', 'speakabout_update_feedback' );
 
 function speakabout_store_feedback(){
 	global $wpdb;
-	$commenter_id = $_POST['userId'];
-	$item_id = $_POST['itemId'];
+	$commenter_id = sanitize_key($_POST['userId']);
+	$item_id = sanitize_key($_POST['itemId']);
 	$highlight = sanitize_text_field($_POST['highlight']);
-	$highlight_with_context = sanitize_text_field($_POST['highlightWithContext']);
+	$highlight_with_context = wp_kses_post($_POST['highlightWithContext']);
 	$comment = sanitize_text_field($_POST['comment']);
-	$page_name = $_POST['pageName'];
-	$page_url = $_POST['pageURL'];
+	$page_name = sanitize_title($_POST['pageName']);
+	$page_url = esc_url_raw($_POST['pageURL']);
 	$has_been_emailed = 0;
 
 	$table_name = $wpdb->prefix . 'speakabout';
@@ -168,14 +183,16 @@ function speakabout_update_feedback(){
 	global $wpdb;
 	$wpdb->show_errors;
 
-	$commenter_id = $_POST['userId'];
-	$item_id = $_POST['itemId'];
-	$highlight = sanitize_text_field($_POST['highlight']);
-	$highlight_with_context = sanitize_text_field($_POST['highlightWithContext']);
+	$commenter_id = sanitize_key($_POST['userId']);
+	$item_id = sanitize_key($_POST['itemId']);
+	$highlight = sanitize_text_field($_POST['highlightWithContext']);
+	$highlight_with_context = wp_kses_post($_POST['highlightWithContext']);
 	$comment = sanitize_text_field($_POST['comment']);
-	$page_name = $_POST['pageName'];
-	$page_url = $_POST['pageURL'];
+	$page_name = sanitize_title($_POST['pageName']);
+	$page_url = esc_url_raw($_POST['pageURL']);
 	$has_been_emailed = 0;
+
+	
 
 	$table_name = $wpdb->prefix . 'speakabout';
 	
@@ -200,13 +217,13 @@ function speakabout_update_feedback(){
 function speakabout_delete_feedback(){
 
 	global $wpdb;
-	$commenter_id = $_POST['userId'];
-	$item_id = $_POST['itemId'];
-	$highlight = sanitize_text_field($_POST['highlight']);
-	$highlight_with_context = sanitize_text_field($_POST['highlightWithContext']);
+	$commenter_id = sanitize_key($_POST['userId']);
+	$item_id = sanitize_key($_POST['itemId']);
+	$highlight = sanitize_text_field($_POST['highlightWithContext']);
+	$highlight_with_context = wp_kses_post($_POST['highlightWithContext']);
 	$comment = sanitize_text_field($_POST['comment']);
-	$page_name = $_POST['pageName'];
-	$page_url = $_POST['pageURL'];
+	$page_name = sanitize_title($_POST['pageName']);
+	$page_url = esc_url_raw($_POST['pageURL']);
 	$has_been_emailed = 0;
 
 	$table_name = $wpdb->prefix . 'speakabout';
@@ -535,15 +552,15 @@ function speakAbout_options_page() {
 //NOTIFICATION UPON ACTIVATION
 // https://stackoverflow.com/questions/38233751/show-message-after-activating-wordpress-plugin
 
-register_activation_hook( __FILE__, 'activation_notice_hook' );
+register_activation_hook( __FILE__, 'speakabout_activation_notice_hook' );
 
-function activation_notice_hook() {
+function speakabout_activation_notice_hook() {
     set_transient( 'admin_notice', true, 5 );
 }
 
-add_action( 'admin_notices', 'admin_activation_notice' );
+add_action( 'admin_notices', 'speakabout_admin_activation_notice' );
 
-function admin_activation_notice(){
+function speakabout_admin_activation_notice(){
 
     /* Check transient, if available display notice */
     if( get_transient( 'admin_notice' ) ){
@@ -561,7 +578,7 @@ function admin_activation_notice(){
 
 //OTHER 
 
-function highlightColorToJS(){
+function speakabout_highlightColorToJS(){
 	$options = get_option( 'speakAbout_settings' );
 	$color = $options['speakAbout_highlight_color'];
 
@@ -588,7 +605,7 @@ function add_speakabout_to_page($content) {
 
 
 	if ($build){
-		$speakabout_highlighterinfo = highlightColorToJS();
+		$speakabout_highlighterinfo = speakabout_highlightColorToJS();
 		$speakabout_open = "<div id='speakaboutWrapper'>";
 		$speakabout_close = "</div>";
 		$content = $speakabout_open . $speakabout_highlighterinfo . $content . $speakabout_close;	
