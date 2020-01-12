@@ -10,7 +10,7 @@ Requires PHP: 5.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A plug-in for WP blogs to facilitate better interaction with readers.
+A plug-in for inline comments on WP blogs
 
 == Description ==
 
@@ -29,7 +29,7 @@ Ever wonder what your readers are thinking as they read? Instead of waiting unti
 
 = How often are emails sent? =
 
-Currently they're set to every three hours. 
+Currently they're set to every three hours. (Note that, technically, this is a minimum of 3 hours. After that time period your site needs to be visited once, by anyone, for the email to then be sent)
 
 
 
@@ -40,11 +40,15 @@ Currently they're set to every three hours.
 
 == Upgrade Notice ==
 
-= 1.0 =
+= 1.1 =
 Version One
 
 
 == Changelog ==
+
+= 1.1 =
+Fixed some styling being overwritten while on certain blogs. 
+
 
 = 1.0 =
 * Version One

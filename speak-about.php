@@ -1,14 +1,14 @@
 <?php
 /**
  * @package SpeakAbout
- * @version 1.0
+ * @version 1.1
  */
 /*
 Plugin Name: SpeakAbout - Inline comments
 Plugin URI: https://speakabout.io/
 Description: Connect with your blog readers through an inline highlighting comments tool.
 Author: Ben Reimer
-Version: 1.0
+Version: 1.1
 Author URI: https://www.benreimer.design
 All Rights Reserved. 
 */
