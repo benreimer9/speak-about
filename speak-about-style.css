@@ -67,24 +67,24 @@ mark.h_item .h_wrapper .h_cancel:hover {
     cursor:pointer;
     background-color: #FF7070;
 }
-mark.h_item.hidden .h_submit{
+mark.h_item.sa_hidden .h_submit{
     transition: transform .17s ease-out; 
 }
-mark.h_item.hidden .h_submit:hover{
+mark.h_item.sa_hidden .h_submit:hover{
     transform: scale(1.3);
 }
 
-mark.h_item.hidden .h_comment {
+mark.h_item.sa_hidden .h_comment {
     height: 0;
     width: 0;
 }
-mark.h_item.hidden .h_comment input {
+mark.h_item.sa_hidden .h_comment input {
     display: none;
 }
-mark.h_item.hidden .h_wrapper .h_submit{
+mark.h_item.sa_hidden .h_wrapper .h_submit{
     top: 33px;
 }
-mark.h_item.hidden .h_wrapper .h_cancel{
+mark.h_item.sa_hidden .h_wrapper .h_cancel{
     display:none;
 }
 
@@ -121,7 +121,7 @@ mark.h_item .h_comment .h_close {
     transform: all .2s ease;
 }
 
-mark.h_item .h_comment.hidden .h_close {
+mark.h_item .h_comment.sa_hidden .h_close {
     top: 36px;
 } */
 
@@ -138,7 +138,7 @@ mark.h_item {
 mark.h_item .h_comment .h_close{
     border-color: #ccc;
 }
-mark.h_item .h_comment.hidden .h_close{
+mark.h_item .h_comment.sa_hidden .h_close{
     background-color: #ccc;
 }
 #speakaboutWrapper ::selection{

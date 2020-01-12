@@ -80,13 +80,13 @@ function updatePageSelectionColor(){
       #speakaboutWrapper mark.h_item .h_comment .h_close {
         border-color: ${highlightColor};
       }
-      #speakaboutWrapper mark.h_item .h_comment.hidden .h_close {
+      #speakaboutWrapper mark.h_item .h_comment.sa_hidden .h_close {
         background-color: ${highlightColor};
       }
       #speakaboutWrapper ::selection {
           background-color: ${highlightColor} !important;
       }
-      #speakaboutWrapper mark.h_item.submitted.h_blend.hidden .h_wrapper .h_submit{
+      #speakaboutWrapper mark.h_item.submitted.h_blend.sa_hidden .h_wrapper .h_submit{
         background-color: ${highlightColor};
       }
     `;
@@ -383,7 +383,7 @@ function addEventListenersToComment(itemId) {
   submitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       let tag = btn.closest("mark");
-      if (tag.classList.contains('hidden')){
+      if (tag.classList.contains('sa_hidden')){
         toggleCommentVisibility(itemId)
       }
       else if (tag.classList.contains('submitted')){
@@ -491,13 +491,13 @@ function rerenderComponentsVisibility(){
     if (item.visible){
       var itemForms = document.querySelectorAll(`mark[h_id = "${item.id}"]`);
       itemForms.forEach(item => {
-        item.classList.remove("hidden");
+        item.classList.remove("sa_hidden");
       });
     }
     else {
       var itemForms = document.querySelectorAll(`mark[h_id = "${item.id}"]`);
       itemForms.forEach(item => {
-        item.classList.add("hidden");
+        item.classList.add("sa_hidden");
       });
     }
   })
